@@ -1,0 +1,49 @@
+name: Setup pnpm + bun
+
+description: Prepare package manager, cache dependencies, and install dependencies
+
+runs:
+  using: composite
+
+  steps:
+    - name: 📦 Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+
+    - name: 🫙 Export pnpm store path
+      id: pnpm-config
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+    - name: 🔑 Export cache rotation key
+      id: cache-rotation
+      shell: bash
+      run: |
+        echo "ROTATION_KEY=$(/bin/date -u "+%Y%m")" >> $GITHUB_OUTPUT
+
+    - name: 🔁 Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.pnpm-config.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-cache-${{ steps.cache-rotation.outputs.ROTATION_KEY }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-cache-${{ steps.cache-rotation.outputs.ROTATION_KEY }}-
+
+    - name: 🔍 .bun-version
+      shell: bash
+      run: |
+        if [ ! -f ".bun-version" ]; then
+          echo "❌ Error: .bun-version file not found. This file is required to configure the correct version of Bun."
+          exit 1
+        fi
+
+    - name: 🥟 Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: ".bun-version"
+
+    - name: 📥 Install dependencies
+      run: pnpm install --frozen-lockfile --prefer-offline
+      shell: bash # required for composite actions
