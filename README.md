@@ -9,5 +9,5 @@
 ```yml
 steps:
   - name: Setup CI
-    uses: variableland/actions/setup-pnpm-bun@main
+    uses: variableland/gh-actions/setup-pnpm-bun@main
 ```
