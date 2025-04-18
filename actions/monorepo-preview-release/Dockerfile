@@ -9,7 +9,6 @@ RUN cd /temp/install && bun i
 FROM base AS release
 COPY --from=install /temp/install/node_modules node_modules
 COPY . .
-RUN ls -laR /app
 ENV NODE_ENV=production
 USER bun
 ENTRYPOINT ["bun", "run", "/app/src/bin.ts"]
