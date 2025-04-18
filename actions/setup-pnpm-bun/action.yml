@@ -1,4 +1,4 @@
-name: Setup pnpm + bun
+name: setup-pnpm-bun
 
 description: Prepare package manager, cache dependencies, and install dependencies
 

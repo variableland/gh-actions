@@ -1,0 +1,10 @@
+name: monorepo-preview-release
+
+description: Action to release packages in a monorepo with a PR related tag
+
+runs:
+  using: docker
+  image: Dockerfile
+  env:
+    PR_NUMBER: ${{ env.PR_NUMBER }}
+    AUTH_TOKEN: ${{ env.AUTH_TOKEN }}

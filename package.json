@@ -1,0 +1,16 @@
+{
+  "name": "gh-actions",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "typecheck": "turbo typecheck",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@vlandoss/biome-config": "latest",
+    "@vlandoss/run-run": "latest",
+    "husky": "^9.1.7",
+    "turbo": "^2.5.0"
+  },
+  "packageManager": "pnpm@10.6.4"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@vlandoss/monorepo-preview-release",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Action to release packages in a monorepo with a PR related tag",
+  "license": "MIT",
+  "author": "rcrd <rcrd@variable.land>",
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/bin.ts",
+    "typecheck": "rr tsc"
+  },
+  "devDependencies": {
+    "@total-typescript/tsconfig": "1.0.4",
+    "@types/bun": "1.2.9"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  }
+}
