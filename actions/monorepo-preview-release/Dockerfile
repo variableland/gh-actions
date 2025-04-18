@@ -1,5 +1,9 @@
-FROM oven/bun:1 AS base
+ARG BUN_VERSION
+ARG PNPM_VERSION
+
+FROM oven/bun:${BUN_VERSION} AS base
 WORKDIR /app
+RUN bun i -g pnpm@${PNPM_VERSION}
 
 FROM base AS install
 RUN mkdir -p /temp/install

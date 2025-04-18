@@ -2,6 +2,30 @@ name: monorepo-preview-release
 
 description: Action to release packages in a monorepo with a PR related tag
 
+# runs:
+#   using: docker
+#   image: Dockerfile
+
+inputs:
+  bun_version:
+    description: Version of Bun to use
+    required: false
+    default: 1.2.4
+
+  pnpm_version:
+    description: Version of pnpm to use
+    required: false
+    default: 10.6.4
+
 runs:
-  using: docker
-  image: Dockerfile
+  using: composite
+
+  steps:
+    - uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        load: true
+        build-args: |
+          BUN_VERSION=${{ inputs.bun_version }}
+          PNPM_VERSION=${{ inputs.pnpm_version }}
