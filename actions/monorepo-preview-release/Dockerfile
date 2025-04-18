@@ -8,7 +8,8 @@ RUN cd /temp/install && bun i
 
 FROM base AS release
 COPY --from=install /temp/install/node_modules node_modules
-COPY . .
+COPY package.json .
+COPY src src
 ENV NODE_ENV=production
 USER bun
 ENTRYPOINT [ "bun", "start" ]
