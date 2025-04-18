@@ -10,6 +10,7 @@ FROM base AS release
 COPY --from=install /temp/install/node_modules node_modules
 COPY package.json .
 COPY src src
+RUN ls -laR /usr/src/app  # Verifica la estructura de archivos
 ENV NODE_ENV=production
 USER bun
-ENTRYPOINT [ "bun", "start" ]
+ENTRYPOINT ["bun", "run", "src/bin.ts"]
