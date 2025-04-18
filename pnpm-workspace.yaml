@@ -1,0 +1,4 @@
+packages:
+  - actions/*
+onlyBuiltDependencies:
+  - '@biomejs/biome'

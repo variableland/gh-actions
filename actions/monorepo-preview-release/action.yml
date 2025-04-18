@@ -1,0 +1,19 @@
+name: monorepo-preview-release
+
+description: Action to release packages in a monorepo with a PR related tag
+
+inputs:
+  auth_token:
+    description: Token for authentication with npm registry
+    required: false
+
+runs:
+  using: composite
+
+  steps:
+    - name: 🚀 Preview release
+      run: bun ${{ github.action_path }}/src/bin.ts
+      shell: bash
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        AUTH_TOKEN: ${{ inputs.auth_token }}

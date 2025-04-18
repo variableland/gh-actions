@@ -1,0 +1,2 @@
+rr test:static --fix-staged
+git update-index --again
