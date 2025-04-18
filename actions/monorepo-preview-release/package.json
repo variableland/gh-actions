@@ -7,7 +7,7 @@
   "author": "rcrd <rcrd@variable.land>",
   "type": "module",
   "scripts": {
-    "start": "bun run src/bin.ts",
+    "start": "bun run ./src/bin.ts",
     "typecheck": "rr tsc"
   },
   "devDependencies": {
