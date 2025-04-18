@@ -11,6 +11,10 @@ inputs:
     description: Token for authentication with npm registry
     required: false
 
+  github_token:
+    description: Token for authentication with GitHub API
+    required: true
+
 runs:
   using: composite
 
@@ -18,6 +22,7 @@ runs:
     - name: 🚀 Preview release
       run: bun ${{ github.action_path }}/src/bin.ts
       shell: bash
-      env:
-        PR_NUMBER: ${{ inputs.pr_number }}
-        AUTH_TOKEN: ${{ inputs.auth_token }}
+      # env:
+      #   PR_NUMBER: ${{ inputs.pr_number }}
+      #   AUTH_TOKEN: ${{ inputs.auth_token }}
+      #   GITHUB_TOKEN: ${{ inputs.github_token }}
