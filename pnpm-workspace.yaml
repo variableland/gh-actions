@@ -2,4 +2,3 @@ packages:
   - actions/*
 onlyBuiltDependencies:
   - '@biomejs/biome'
-  - bun
