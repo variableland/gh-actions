@@ -8,3 +8,4 @@ runs:
   env:
     PR_NUMBER: ${{ env.PR_NUMBER }}
     AUTH_TOKEN: ${{ env.AUTH_TOKEN }}
+    GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
