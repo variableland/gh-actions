@@ -22,7 +22,7 @@ runs:
     - name: 🚀 Preview release
       run: bun ${{ github.action_path }}/src/index.ts
       shell: bash
-      # env:
-      #   PR_NUMBER: ${{ inputs.pr_number }}
-      #   AUTH_TOKEN: ${{ inputs.auth_token }}
-      #   GITHUB_TOKEN: ${{ inputs.github_token }}
+      with:
+        pr_number: ${{ inputs.pr_number }}
+        auth_token: ${{ inputs.auth_token }}
+        github_token: ${{ inputs.github_token }}
