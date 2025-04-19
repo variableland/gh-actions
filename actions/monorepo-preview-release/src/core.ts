@@ -23,10 +23,6 @@ async function publishPackage(pkg: Package, tag: string) {
 export async function publishPackages(options: Options): Promise<PublishResults> {
   const { prNumber, authToken } = options;
 
-  if (!prNumber) {
-    throw new Error("The pr_number is required");
-  }
-
   if (!fs.existsSync(".npmrc")) {
     if (!authToken) {
       throw new Error("The auth_token is required");

@@ -16,9 +16,17 @@ function getPreviewReleaseMessage(result: PublishResults) {
 
 export async function main() {
   try {
-    const githubToken = core.getInput("github_token", { required: true });
-    const prNumber = core.getInput("pr_number", { required: true });
-    const authToken = core.getInput("auth_token");
+    const githubToken = process.env.GITHUB_TOKEN;
+    const prNumber = process.env.PR_NUMBER;
+    const authToken = process.env.AUTH_TOKEN;
+
+    if (!githubToken) {
+      throw new Error("GITHUB_TOKEN is not set");
+    }
+
+    if (!prNumber) {
+      throw new Error("PR_NUMBER is not set");
+    }
 
     const octokit = github.getOctokit(githubToken);
 
