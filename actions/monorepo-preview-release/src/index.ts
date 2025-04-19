@@ -5,17 +5,27 @@ import { type PublishResults, publishPackages } from "./core.js";
 
 const COMMENT_TAG = "<!-- preview-release-action -->";
 
-function getPreviewReleaseMessage(results: PublishResults) {
+function getPreviewReleaseMessage(prNumber: string, results: PublishResults) {
+  const firstResult = results[0];
+
   // biome-ignore format:
   return [
     COMMENT_TAG,
     "### Preview release",
     "",
+    `Latest commit: ${github.context.sha}`,
+    "",
     "Some packages have been released:",
     markdownTable([
-      ["Package", "Version"],
-      ...results.map((item) => [item.packageName, item.nextVersion])
+      ["Package", "Version", "Install"],
+      ...results.map(({ packageName, nextVersion }) => [packageName, nextVersion, `\`${packageName}@${nextVersion}\``])
     ]),
+    "",
+    "> [!NOTE]",
+    "> Use the PR number as tag to install any package. For instance:",
+    "> ```",
+    `> pnpm add ${firstResult?.packageName}@${prNumber}`,
+    "> ```"
   ].join("\n");
 }
 
@@ -25,16 +35,18 @@ function getNoPreviewReleaseMessage() {
     COMMENT_TAG,
     "### Preview release",
     "",
+    `Latest commit: ${github.context.sha}`,
+    "",
     "No packages have been released.",
   ].join("\n");
 }
 
-function getCommentBody(results: PublishResults) {
-  if (results.length > 0) {
-    return getPreviewReleaseMessage(results);
+function getCommentBody(prNumber: string, results: PublishResults) {
+  if (!results.length) {
+    return getNoPreviewReleaseMessage();
   }
 
-  return getNoPreviewReleaseMessage();
+  return getPreviewReleaseMessage(prNumber, results);
 }
 
 export async function main() {
@@ -76,7 +88,7 @@ export async function main() {
       repo: github.context.repo.repo,
       owner: github.context.repo.owner,
       issue_number: Number(prNumber),
-      body: getCommentBody(results),
+      body: getCommentBody(prNumber, results),
     };
 
     if (!commentId) {
