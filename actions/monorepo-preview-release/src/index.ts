@@ -1,13 +1,20 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { markdownTable } from "markdown-table";
-import { type PublishResults, getLatestCommitSha, getPublishTag, publishPackages } from "./core.js";
+import { type PublishResults, getPublishTag, publishPackages } from "./core.js";
 
 const COMMENT_TAG = "<!-- preview-release-action -->";
 
-async function getPreviewReleaseMessage(prNumber: string, results: PublishResults) {
+type GetMessageOptions = {
+  results: PublishResults;
+  prNumber: string;
+  latestCommitSha: string;
+};
+
+function getPreviewReleaseMessage(options: GetMessageOptions) {
+  const { results, prNumber, latestCommitSha } = options;
+
   const firstResult = results[0];
-  const latestCommitSha = await getLatestCommitSha();
 
   // biome-ignore format:
   return [
@@ -42,12 +49,12 @@ function getNoPreviewReleaseMessage() {
   ].join("\n");
 }
 
-async function getCommentBody(prNumber: string, results: PublishResults) {
-  if (!results.length) {
+function getCommentBody(options: GetMessageOptions) {
+  if (!options.results.length) {
     return getNoPreviewReleaseMessage();
   }
 
-  return getPreviewReleaseMessage(prNumber, results);
+  return getPreviewReleaseMessage(options);
 }
 
 export async function main() {
@@ -66,9 +73,18 @@ export async function main() {
 
     const octokit = github.getOctokit(githubToken);
 
+    const pullRequest = await octokit.rest.pulls.get({
+      repo: github.context.repo.repo,
+      owner: github.context.repo.owner,
+      pull_number: Number(prNumber),
+    });
+
+    const latestCommitSha = pullRequest.data.head.sha;
+
     const results = await publishPackages({
       prNumber,
       authToken,
+      latestCommitSha,
     });
 
     async function getCommentId() {
@@ -89,7 +105,11 @@ export async function main() {
       repo: github.context.repo.repo,
       owner: github.context.repo.owner,
       issue_number: Number(prNumber),
-      body: await getCommentBody(prNumber, results),
+      body: getCommentBody({
+        results,
+        prNumber,
+        latestCommitSha,
+      }),
     };
 
     if (!commentId) {

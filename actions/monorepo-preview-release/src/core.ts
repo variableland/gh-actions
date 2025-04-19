@@ -9,6 +9,7 @@ export type PublishResults = Array<{
 
 type Options = {
   prNumber: string;
+  latestCommitSha: string;
   authToken?: string;
 };
 
@@ -24,12 +25,8 @@ export function getPublishTag(prNumber: string) {
   return `pr-${prNumber}`;
 }
 
-export async function getLatestCommitSha() {
-  return (await $`git rev-parse HEAD`.text()).trim();
-}
-
 export async function publishPackages(options: Options): Promise<PublishResults> {
-  const { prNumber, authToken } = options;
+  const { prNumber, authToken, latestCommitSha } = options;
 
   if (!fs.existsSync(".npmrc")) {
     if (!authToken) {
@@ -52,7 +49,7 @@ export async function publishPackages(options: Options): Promise<PublishResults>
   const nextVersions = new Map<string, string>();
 
   try {
-    const shortGitSha = (await $`git rev-parse --short HEAD`.text()).trim();
+    const shortGitSha = latestCommitSha.substring(0, 7);
     const preid = `git-${shortGitSha}`;
 
     for (const pkg of packagesToPublish) {
