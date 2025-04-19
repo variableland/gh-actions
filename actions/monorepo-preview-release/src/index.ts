@@ -10,6 +10,8 @@ function getPreviewReleaseMessage(results: PublishResults) {
   return [
     COMMENT_TAG,
     "### Preview release",
+    "",
+    "Some packages have been released:",
     markdownTable([
       ["Package", "Version"],
       ...results.map((item) => [item.packageName, item.nextVersion])
@@ -17,13 +19,13 @@ function getPreviewReleaseMessage(results: PublishResults) {
   ].join("\n");
 }
 
-function getNoPreviewReleaseMessage(results: PublishResults) {
+function getNoPreviewReleaseMessage() {
   // biome-ignore format:
   return [
     COMMENT_TAG,
     "### Preview release",
     "",
-    "No packages have changed",
+    "No packages have been released.",
   ].join("\n");
 }
 
@@ -32,7 +34,7 @@ function getCommentBody(results: PublishResults) {
     return getPreviewReleaseMessage(results);
   }
 
-  return getNoPreviewReleaseMessage(results);
+  return getNoPreviewReleaseMessage();
 }
 
 export async function main() {

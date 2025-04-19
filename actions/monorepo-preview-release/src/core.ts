@@ -13,7 +13,7 @@ type Options = {
 };
 
 async function bumpPackage(pkg: Package, preid: string) {
-  return $`cd ${pkg.path} && pnpm version prerelease --preid="${preid}" --no-git-tag-version`.text();
+  return (await $`cd ${pkg.path} && pnpm version prerelease --preid="${preid}" --no-git-tag-version`.text()).trim();
 }
 
 async function publishPackage(pkg: Package, tag: string) {
