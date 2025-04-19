@@ -68,24 +68,22 @@ export async function main() {
       return existingComment?.id;
     }
 
-    if (results.length > 0) {
-      const commentId = await getCommentId();
+    const commentId = await getCommentId();
 
-      const payload = {
-        repo: github.context.repo.repo,
-        owner: github.context.repo.owner,
-        issue_number: Number(prNumber),
-        body: getCommentBody(results),
-      };
+    const payload = {
+      repo: github.context.repo.repo,
+      owner: github.context.repo.owner,
+      issue_number: Number(prNumber),
+      body: getCommentBody(results),
+    };
 
-      if (!commentId) {
-        await octokit.rest.issues.createComment(payload);
-      } else {
-        await octokit.rest.issues.updateComment({
-          ...payload,
-          comment_id: commentId,
-        });
-      }
+    if (!commentId) {
+      await octokit.rest.issues.createComment(payload);
+    } else {
+      await octokit.rest.issues.updateComment({
+        ...payload,
+        comment_id: commentId,
+      });
     }
   } catch (error) {
     core.setFailed(error as unknown as Error);
