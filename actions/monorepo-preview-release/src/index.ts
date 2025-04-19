@@ -1,19 +1,20 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { markdownTable } from "markdown-table";
-import { type PublishResults, getPublishTag, publishPackages } from "./core.js";
+import { type PublishResults, getLatestCommitSha, getPublishTag, publishPackages } from "./core.js";
 
 const COMMENT_TAG = "<!-- preview-release-action -->";
 
-function getPreviewReleaseMessage(prNumber: string, results: PublishResults) {
+async function getPreviewReleaseMessage(prNumber: string, results: PublishResults) {
   const firstResult = results[0];
+  const latestCommitSha = await getLatestCommitSha();
 
   // biome-ignore format:
   return [
     COMMENT_TAG,
     "### Preview release",
     "",
-    `Latest commit: ${github.context.sha}`,
+    `Latest commit: ${latestCommitSha}`,
     "",
     "Some packages have been released:",
     markdownTable([
@@ -41,7 +42,7 @@ function getNoPreviewReleaseMessage() {
   ].join("\n");
 }
 
-function getCommentBody(prNumber: string, results: PublishResults) {
+async function getCommentBody(prNumber: string, results: PublishResults) {
   if (!results.length) {
     return getNoPreviewReleaseMessage();
   }
@@ -88,7 +89,7 @@ export async function main() {
       repo: github.context.repo.repo,
       owner: github.context.repo.owner,
       issue_number: Number(prNumber),
-      body: getCommentBody(prNumber, results),
+      body: await getCommentBody(prNumber, results),
     };
 
     if (!commentId) {

@@ -24,6 +24,10 @@ export function getPublishTag(prNumber: string) {
   return `pr-${prNumber}`;
 }
 
+export async function getLatestCommitSha() {
+  return (await $`git rev-parse HEAD`.text()).trim();
+}
+
 export async function publishPackages(options: Options): Promise<PublishResults> {
   const { prNumber, authToken } = options;
 
