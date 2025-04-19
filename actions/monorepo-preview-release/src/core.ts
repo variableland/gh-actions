@@ -20,6 +20,10 @@ async function publishPackage(pkg: Package, tag: string) {
   await $`cd ${pkg.path} && pnpm publish --tag="${tag}" --no-git-checks`;
 }
 
+export function getPublishTag(prNumber: string) {
+  return `pr-${prNumber}`;
+}
+
 export async function publishPackages(options: Options): Promise<PublishResults> {
   const { prNumber, authToken } = options;
 
@@ -57,7 +61,7 @@ export async function publishPackages(options: Options): Promise<PublishResults>
   }
 
   try {
-    const tag = `pr-${prNumber}`;
+    const tag = getPublishTag(prNumber);
 
     for (const pkg of packagesToPublish) {
       await publishPackage(pkg, tag);

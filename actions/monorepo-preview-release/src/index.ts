@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { markdownTable } from "markdown-table";
-import { type PublishResults, publishPackages } from "./core.js";
+import { type PublishResults, getPublishTag, publishPackages } from "./core.js";
 
 const COMMENT_TAG = "<!-- preview-release-action -->";
 
@@ -24,7 +24,7 @@ function getPreviewReleaseMessage(prNumber: string, results: PublishResults) {
     "> [!NOTE]",
     "> Use the PR number as tag to install any package. For instance:",
     "> ```",
-    `> pnpm add ${firstResult?.packageName}@${prNumber}`,
+    `> pnpm add ${firstResult?.packageName}@${getPublishTag(prNumber)}`,
     "> ```"
   ].join("\n");
 }
