@@ -7,14 +7,18 @@
   "author": "rcrd <rcrd@variable.land>",
   "type": "module",
   "scripts": {
-    "start": "bun run ./src/bin.ts",
     "typecheck": "rr tsc"
   },
   "devDependencies": {
     "@total-typescript/tsconfig": "1.0.4",
-    "@types/bun": "1.2.9"
+    "@types/bun": "^1.2.10"
   },
   "engines": {
     "bun": ">=1.0.0"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.0",
+    "markdown-table": "^3.0.4"
   }
 }
