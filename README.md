@@ -25,5 +25,3 @@
         PR_NUMBER: ${{ github.event.pull_request.number }} # depends on the workflow event
         AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # optional
   ```
-
-<!-- preview-release-action -->
