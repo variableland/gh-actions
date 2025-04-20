@@ -71,6 +71,8 @@ export async function main() {
       throw new Error("PR_NUMBER is not set");
     }
 
+    core.debug(`PR number: ${prNumber}`);
+
     const octokit = github.getOctokit(githubToken);
 
     const pullRequest = await octokit.rest.pulls.get({
@@ -80,6 +82,8 @@ export async function main() {
     });
 
     const latestCommitSha = pullRequest.data.head.sha;
+
+    core.debug(`Latest commit sha: ${latestCommitSha}`);
 
     const results = await publishPackages({
       prNumber,
