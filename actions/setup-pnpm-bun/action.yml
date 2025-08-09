@@ -7,7 +7,7 @@ runs:
 
   steps:
     - name: 📦 Setup PNPM
-      uses: ./actions/setup-pnpm
+      uses: variableland/gh-actions/actions/setup-pnpm
 
     - name: 🔍 .bun-version
       shell: bash
