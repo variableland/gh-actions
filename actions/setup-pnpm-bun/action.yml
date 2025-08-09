@@ -6,8 +6,34 @@ runs:
   using: composite
 
   steps:
-    - name: 📦 Setup PNPM
-      uses: variableland/gh-actions/actions/setup-pnpm
+    - name: 📦 Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+
+    - name: 🫙 Export pnpm store path
+      id: pnpm-config
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+    - name: 🔑 Export cache rotation key
+      id: cache-rotation
+      shell: bash
+      run: |
+        echo "ROTATION_KEY=$(/bin/date -u "+%Y%m")" >> $GITHUB_OUTPUT
+
+    - name: 🔁 Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.pnpm-config.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-cache-${{ steps.cache-rotation.outputs.ROTATION_KEY }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-cache-${{ steps.cache-rotation.outputs.ROTATION_KEY }}-
+
+    - name: 📥 Install dependencies
+      run: pnpm install --frozen-lockfile --prefer-offline
+      shell: bash # required for composite actions
 
     - name: 🔍 .bun-version
       shell: bash
