@@ -2,12 +2,21 @@
 
 ## List
 
+- [Setup pnpm](./actions/setup-pnpm/action.yml)
 - [Setup pnpm + bun](./actions/setup-pnpm-bun/action.yml)
 - [Monorepo preview release](./actions/monorepo-preview-release/action.yml)
 
 ## Usage
 
-1. Setup pnpm + bun
+1. Setup pnpm
+
+  ```yml
+  steps:
+    - name: Setup CI
+      uses: variableland/gh-actions/actions/setup-pnpm@main
+  ```
+
+2. Setup pnpm + bun
 
   ```yml
   steps:
@@ -15,7 +24,7 @@
       uses: variableland/gh-actions/actions/setup-pnpm-bun@main
   ```
 
-2. Monorepo preview release
+3. Monorepo preview release
 
   ```yml
   steps:

@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { markdownTable } from "markdown-table";
-import { type PublishResults, getPublishTag, publishPackages } from "./core.js";
+import { getPublishTag, type PublishResults, publishPackages } from "./core.js";
 
 const COMMENT_TAG = "<!-- preview-release-action -->";
 
@@ -16,7 +16,6 @@ function getPreviewReleaseMessage(options: GetMessageOptions) {
 
   const firstResult = results[0];
 
-  // biome-ignore format:
   return [
     COMMENT_TAG,
     "### Preview release",
@@ -26,19 +25,18 @@ function getPreviewReleaseMessage(options: GetMessageOptions) {
     "Some packages have been released:",
     markdownTable([
       ["Package", "Version", "Install"],
-      ...results.map(({ packageName, nextVersion }) => [packageName, nextVersion, `\`${packageName}@${nextVersion}\``])
+      ...results.map(({ packageName, nextVersion }) => [packageName, nextVersion, `\`${packageName}@${nextVersion}\``]),
     ]),
     "",
     "> [!NOTE]",
     "> Use the PR number as tag to install any package. For instance:",
     "> ```",
     `> pnpm add ${firstResult?.packageName}@${getPublishTag(prNumber)}`,
-    "> ```"
+    "> ```",
   ].join("\n");
 }
 
 function getNoPreviewReleaseMessage() {
-  // biome-ignore format:
   return [
     COMMENT_TAG,
     "### Preview release",
