@@ -7,10 +7,10 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@vlandoss/biome-config": "latest",
-    "@vlandoss/run-run": "latest",
+    "@vlandoss/biome-config": "^0.0.3",
+    "@vlandoss/run-run": "^0.0.6",
     "husky": "^9.1.7",
-    "turbo": "^2.5.0"
+    "turbo": "^2.5.5"
   },
   "packageManager": "pnpm@10.6.4"
 }

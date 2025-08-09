@@ -5,7 +5,7 @@ export type Package = {
   name: string;
   version: string;
   path: string;
-  // biome-ignore lint:
+  // biome-ignore lint/suspicious/noExplicitAny: Allow any type for additional properties
   [key: string]: any;
 };
 

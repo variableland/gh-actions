@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { $ } from "bun";
-import { type Package, formatError, getChangedPackages, getPackagesToPublish, getWorkspacesPackages } from "./utils.js";
+import { formatError, getChangedPackages, getPackagesToPublish, getWorkspacesPackages, type Package } from "./utils.js";
 
 export type PublishResults = Array<{
   packageName: string;
@@ -33,7 +33,7 @@ export async function publishPackages(options: Options): Promise<PublishResults>
       throw new Error("The auth_token is required");
     }
 
-    // Don't interpolate AUTH_TOKEN for security reasons
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: Don't interpolate AUTH_TOKEN for security reasons
     fs.writeFileSync(".npmrc", "//registry.npmjs.org/:_authToken=${AUTH_TOKEN}");
   }
 
