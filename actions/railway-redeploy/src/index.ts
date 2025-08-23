@@ -13,6 +13,7 @@ type Deployments = {
 type Deployment = {
   id: string;
   projectId: string;
+  environmentId: string;
   canRedeploy?: boolean;
 };
 
@@ -51,6 +52,7 @@ async function main() {
             node {
               id
               projectId
+              environmentId
               canRedeploy
             }
           }
@@ -73,8 +75,8 @@ async function main() {
     return gqlClient.mutation(document, { deploymentId }).toPromise();
   }
 
-  function getDeploymentPanelUrl(deployment: Deployment) {
-    return `https://railway.com/project/${deployment.projectId}/service/${serviceId}?id=${deployment.id}`;
+  function getServicePanelUrl(deployment: Deployment) {
+    return `https://railway.com/project/${deployment.projectId}/service/${serviceId}?environmentId=${deployment.environmentId}`;
   }
 
   try {
@@ -92,9 +94,11 @@ async function main() {
 
     await deploymentRedeploy(deployment.id);
 
-    const panelUrl = getDeploymentPanelUrl(deployment);
+    const serviceUrl = getServicePanelUrl(deployment);
 
-    core.info(`🚀 Deployment (ID: ${deployment.id}) redeploy launched: ${panelUrl}`);
+    core.info(`🚀 Deployment (ID: ${deployment.id}) redeploy launched: ${serviceUrl}`);
+
+    core.setOutput("service_url", serviceUrl);
   } catch (error) {
     const msg = "Failed to redeploy railway service";
 
