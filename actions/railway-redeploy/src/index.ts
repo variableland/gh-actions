@@ -17,9 +17,19 @@ type Deployment = {
 };
 
 async function main() {
-  const serviceId = core.getInput("service_id", { required: true });
-  const railwayToken = core.getInput("railway_token", { required: true });
-  const railwayApi = core.getInput("railway_api", { required: false });
+  const serviceId = process.env.SERVICE_ID;
+  const railwayToken = process.env.RAILWAY_TOKEN;
+  const railwayApi = process.env.RAILWAY_API!;
+
+  if (!serviceId) {
+    core.setFailed("🚨 Railway service ID is not set");
+    return;
+  }
+
+  if (!railwayToken) {
+    core.setFailed("🚨 Railway API token is not set");
+    return;
+  }
 
   const gqlClient = new Client({
     url: railwayApi,
