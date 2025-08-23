@@ -17,9 +17,9 @@ type Deployment = {
 };
 
 async function main() {
-  const railwayApi = process.env.RAILWAY_API!;
-  const railwayToken = process.env.RAILWAY_TOKEN!;
-  const serviceId = process.env.SERVICE_ID!;
+  const serviceId = core.getInput("service_id", { required: true });
+  const railwayToken = core.getInput("railway_token", { required: true });
+  const railwayApi = core.getInput("railway_api", { required: false });
 
   const gqlClient = new Client({
     url: railwayApi,
@@ -63,7 +63,7 @@ async function main() {
     return gqlClient.mutation(document, { deploymentId }).toPromise();
   }
 
-  function getDeploymentConfigUrl(deployment: Deployment) {
+  function getDeploymentPanelUrl(deployment: Deployment) {
     return `https://railway.com/project/${deployment.projectId}/service/${serviceId}?id=${deployment.id}`;
   }
 
@@ -82,11 +82,16 @@ async function main() {
 
     await deploymentRedeploy(deployment.id);
 
-    core.info(`Deployment (ID: ${deployment.id}) redeploy started: ${getDeploymentConfigUrl(deployment)}`);
-  } catch (cause) {
-    core.error("Failed to redeploy railway service");
-    if (cause instanceof Error) {
-      core.error(cause);
+    const panelUrl = getDeploymentPanelUrl(deployment);
+
+    core.info(`🚀 Deployment (ID: ${deployment.id}) redeploy launched: ${panelUrl}`);
+  } catch (error) {
+    const msg = "Failed to redeploy railway service";
+
+    if (error instanceof Error) {
+      core.setFailed(`🚨 ${msg}: ${error.message}`);
+    } else {
+      core.setFailed(`🚨 ${msg}`);
     }
   }
 }
