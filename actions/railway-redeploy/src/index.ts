@@ -84,8 +84,10 @@ async function main() {
 
     core.info(`Deployment (ID: ${deployment.id}) redeploy started: ${getDeploymentConfigUrl(deployment)}`);
   } catch (cause) {
-    const error = new Error("Failed to redeploy railway service", { cause });
-    core.error(error);
+    core.error("Failed to redeploy railway service");
+    if (cause instanceof Error) {
+      core.error(cause);
+    }
   }
 }
 
