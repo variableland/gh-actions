@@ -45,5 +45,5 @@
       uses: variableland/gh-actions/actions/railway-redeploy@main
       with:
         service_id: ${{ var.SERVICE_ID }}
-        railway_token: ${{ secrets.RAILWAY_TOKEN }}
+        auth_token: ${{ secrets.RAILWAY_TOKEN }}
   ```
