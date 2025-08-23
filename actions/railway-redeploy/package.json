@@ -1,8 +1,8 @@
 {
-  "name": "@vlandoss/monorepo-preview-release",
+  "name": "@vlandoss/railway-redeploy",
   "version": "0.0.0",
   "private": true,
-  "description": "Action to release packages in a monorepo with a PR related tag",
+  "description": "Action to trigger a redeploy of a railway service",
   "license": "MIT",
   "author": "rcrd <rcrd@variable.land>",
   "type": "module",
@@ -16,6 +16,6 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
-    "markdown-table": "^3.0.4"
+    "@urql/core": "^6.0.1"
   }
 }
