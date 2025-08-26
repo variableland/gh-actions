@@ -1,6 +1,8 @@
 import { relative } from "node:path";
 import * as core from "@actions/core";
+import * as github from "@actions/github";
 import { $ } from "bun";
+import type { Octokit } from "./types.js";
 
 export type Package = {
   name: string;
@@ -58,13 +60,13 @@ export async function getWorkspacesPackages(): Promise<Array<Package>> {
   return $`pnpm list -r --json`.json();
 }
 
-export async function getChangedPackages(allPackages: Array<Package>) {
+export async function getChangedPackages(octokit: Octokit, allPackages: Array<Package>) {
   function getRelativeFolderPath(absPath: string) {
     const relativePath = relative(process.cwd(), absPath);
     return relativePath.length > 0 ? relativePath : null;
   }
 
-  const lastCheckpoint = await getLastCheckpoint();
+  const lastCheckpoint = await getLastCheckpoint(octokit);
   const changedPaths = (await $`git fetch origin main && git diff --name-only ${lastCheckpoint}`.text()).trim().split("\n");
 
   core.debug(`Last checkpoint: ${lastCheckpoint}`);
@@ -110,13 +112,24 @@ export async function getPackagesToPublish(changedPackages: Array<Package>, allP
   return packagesToPublish;
 }
 
-export async function getLastCheckpoint() {
+export async function getLastCheckpoint(octokit: Octokit) {
   const defaultCase = "origin/main";
 
   try {
-    const releaseCommitMessage = "chore: update versions";
-    const lastReleaseCommitSha = (await $`git log --oneline --grep="^${releaseCommitMessage}" -1 --format="%H"`.text()).trim();
-    return lastReleaseCommitSha || defaultCase;
+    const { owner, repo } = github.context.repo;
+
+    const searchResponse = await octokit.rest.search.commits({
+      q: `repo:${owner}/${repo} "chore: update versions"`,
+      sort: "committer-date",
+      order: "desc",
+      per_page: 1,
+    });
+
+    const lastReleaseCommit = searchResponse?.data?.items?.[0];
+
+    core.debug(`Last release commit: ${lastReleaseCommit?.sha ?? "not found"}`);
+
+    return lastReleaseCommit?.sha ?? defaultCase;
   } catch {
     return defaultCase;
   }

@@ -84,6 +84,7 @@ export async function main() {
     core.debug(`Latest commit sha: ${latestCommitSha}`);
 
     const results = await publishPackages({
+      octokit,
       prNumber,
       authToken,
       latestCommitSha,

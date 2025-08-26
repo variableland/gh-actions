@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { $ } from "bun";
+import type { Octokit } from "./types.js";
 import { formatError, getChangedPackages, getPackagesToPublish, getWorkspacesPackages, type Package } from "./utils.js";
 
 export type PublishResults = Array<{
@@ -8,6 +9,7 @@ export type PublishResults = Array<{
 }>;
 
 type Options = {
+  octokit: Octokit;
   prNumber: string;
   latestCommitSha: string;
   authToken?: string;
@@ -26,7 +28,7 @@ export function getPublishTag(prNumber: string) {
 }
 
 export async function publishPackages(options: Options): Promise<PublishResults> {
-  const { prNumber, authToken, latestCommitSha } = options;
+  const { prNumber, authToken, latestCommitSha, octokit } = options;
 
   if (!fs.existsSync(".npmrc")) {
     if (!authToken) {
@@ -38,7 +40,7 @@ export async function publishPackages(options: Options): Promise<PublishResults>
   }
 
   const allPackages = await getWorkspacesPackages();
-  const changedPackages = await getChangedPackages(allPackages);
+  const changedPackages = await getChangedPackages(octokit, allPackages);
   const packagesToPublish = await getPackagesToPublish(changedPackages, allPackages);
 
   if (!packagesToPublish.length) {
