@@ -63,7 +63,8 @@ export async function getChangedPackages(allPackages: Array<Package>) {
     return relativePath.length > 0 ? relativePath : null;
   }
 
-  const changedPaths = (await $`git fetch origin main && git diff --name-only origin/main`.text()).trim().split("\n");
+  const lastCheckpoint = await getLastCheckpoint();
+  const changedPaths = (await $`git fetch origin main && git diff --name-only ${lastCheckpoint}`.text()).trim().split("\n");
 
   const changedPackages = new Set<Package>();
 
@@ -95,4 +96,16 @@ export async function getPackagesToPublish(changedPackages: Array<Package>, allP
   }
 
   return Array.from(packagesToPublish.values());
+}
+
+export async function getLastCheckpoint() {
+  const defaultCase = "origin/main";
+
+  try {
+    const releaseCommitMessage = "chore: update versions";
+    const lastReleaseCommitSha = (await $`git log --oneline --grep="^${releaseCommitMessage}" -1 --format="%H"`.text()).trim();
+    return lastReleaseCommitSha || defaultCase;
+  } catch {
+    return defaultCase;
+  }
 }

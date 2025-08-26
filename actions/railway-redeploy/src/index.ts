@@ -42,7 +42,7 @@ async function main() {
   });
 
   function getLastActiveOrSleepingDeployment() {
-    const document = `
+    const document = `#graphql
       query getLastDeployment($serviceId: String!) {
         deployments(first: 1, input: {
           serviceId: $serviceId
@@ -64,7 +64,7 @@ async function main() {
   }
 
   function deploymentRedeploy(deploymentId: string) {
-    const document = `
+    const document = `#graphql
       mutation redeploy($deploymentId: String!) {
         deploymentRedeploy(id: $deploymentId) {
           id
