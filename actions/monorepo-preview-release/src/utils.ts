@@ -1,4 +1,5 @@
 import { relative } from "node:path";
+import * as core from "@actions/core";
 import { $ } from "bun";
 
 export type Package = {
@@ -66,36 +67,47 @@ export async function getChangedPackages(allPackages: Array<Package>) {
   const lastCheckpoint = await getLastCheckpoint();
   const changedPaths = (await $`git fetch origin main && git diff --name-only ${lastCheckpoint}`.text()).trim().split("\n");
 
-  const changedPackages = new Set<Package>();
+  core.debug(`Last checkpoint: ${lastCheckpoint}`);
+  core.debug(`Changed paths:\n${changedPaths.join("\n")}`);
+
+  const changedPackagesSet = new Set<Package>();
 
   for (const pkg of allPackages) {
     const relativePath = getRelativeFolderPath(pkg.path);
     const hasChanged = changedPaths.some((file) => relativePath && file.startsWith(relativePath));
 
     if (hasChanged) {
-      changedPackages.add(pkg);
+      changedPackagesSet.add(pkg);
     }
   }
 
-  return Array.from(changedPackages);
+  const changedPackages = Array.from(changedPackagesSet);
+
+  core.debug(`Changed packages:\n${changedPackages.map((pkg) => pkg.name).join("\n")}`);
+
+  return changedPackages;
 }
 
 export async function getPackagesToPublish(changedPackages: Array<Package>, allPackages: Array<Package>) {
-  const packagesToPublish = new Map<string, Package>();
+  const packagesToPublishMap = new Map<string, Package>();
 
   for (const pkg of changedPackages) {
-    packagesToPublish.set(pkg.name, pkg);
+    packagesToPublishMap.set(pkg.name, pkg);
 
     const dependencies = await getDependenciesPackages(pkg, allPackages);
 
     for (const dependency of dependencies) {
       if (await isUnpublished(dependency)) {
-        packagesToPublish.set(dependency.name, dependency);
+        packagesToPublishMap.set(dependency.name, dependency);
       }
     }
   }
 
-  return Array.from(packagesToPublish.values());
+  const packagesToPublish = Array.from(packagesToPublishMap.values());
+
+  core.debug(`Packages to publish:\n${packagesToPublish.map((pkg) => pkg.name).join("\n")}`);
+
+  return packagesToPublish;
 }
 
 export async function getLastCheckpoint() {
