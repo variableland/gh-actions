@@ -2,8 +2,6 @@
 
 This Github action creates a preview release of your package and comments on the pull request with the release information.
 
-![pr comment demo](./readme/pr-comment.png)
-
 ## Usage
 
 ```yml
