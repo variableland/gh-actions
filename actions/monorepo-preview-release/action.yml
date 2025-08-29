@@ -3,10 +3,6 @@ name: monorepo-preview-release
 description: Action to release packages in a monorepo with a PR related tag
 
 inputs:
-  pr_number:
-    description: Number of the pull request to use for tagging
-    required: true
-
   auth_token:
     description: Token for authentication with npm registry
     required: false
@@ -23,6 +19,5 @@ runs:
       run: bun ${{ github.action_path }}/src/index.ts
       shell: bash
       env:
-        PR_NUMBER: ${{ inputs.pr_number }}
         AUTH_TOKEN: ${{ inputs.auth_token }}
         GITHUB_TOKEN: ${{ inputs.github_token }}

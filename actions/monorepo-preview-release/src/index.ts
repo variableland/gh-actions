@@ -7,7 +7,7 @@ const COMMENT_TAG = "<!-- preview-release-action -->";
 
 type GetMessageOptions = {
   results: PublishResults;
-  prNumber: string;
+  prNumber: number;
   latestCommitSha: string;
 };
 
@@ -36,12 +36,14 @@ function getPreviewReleaseMessage(options: GetMessageOptions) {
   ].join("\n");
 }
 
-function getNoPreviewReleaseMessage() {
+function getNoPreviewReleaseMessage(options: GetMessageOptions) {
+  const { latestCommitSha } = options;
+
   return [
     COMMENT_TAG,
     "### Preview release",
     "",
-    `Latest commit: ${github.context.sha}`,
+    `Latest commit: ${latestCommitSha}`,
     "",
     "No packages have been released.",
   ].join("\n");
@@ -49,7 +51,7 @@ function getNoPreviewReleaseMessage() {
 
 function getCommentBody(options: GetMessageOptions) {
   if (!options.results.length) {
-    return getNoPreviewReleaseMessage();
+    return getNoPreviewReleaseMessage(options);
   }
 
   return getPreviewReleaseMessage(options);
@@ -58,7 +60,7 @@ function getCommentBody(options: GetMessageOptions) {
 export async function main() {
   try {
     const githubToken = process.env.GITHUB_TOKEN;
-    const prNumber = process.env.PR_NUMBER;
+    const prNumber = github.context.payload.pull_request?.number;
     const authToken = process.env.AUTH_TOKEN;
 
     if (!githubToken) {
@@ -66,27 +68,14 @@ export async function main() {
     }
 
     if (!prNumber) {
-      throw new Error("PR_NUMBER is not set");
+      throw new Error("PR number can not be determined");
     }
 
     core.debug(`PR number: ${prNumber}`);
 
     const octokit = github.getOctokit(githubToken);
 
-    const pullRequest = await octokit.rest.pulls.get({
-      repo: github.context.repo.repo,
-      owner: github.context.repo.owner,
-      pull_number: Number(prNumber),
-    });
-
-    console.dir(
-      {
-        context: github.context,
-      },
-      { depth: 4 },
-    );
-
-    const latestCommitSha = pullRequest.data.head.sha;
+    const latestCommitSha = github.context.sha;
 
     core.debug(`Latest commit sha: ${latestCommitSha}`);
 

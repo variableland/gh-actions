@@ -10,7 +10,7 @@ export type PublishResults = Array<{
 
 type Options = {
   octokit: Octokit;
-  prNumber: string;
+  prNumber: number;
   latestCommitSha: string;
   authToken?: string;
 };
@@ -23,7 +23,7 @@ async function publishPackage(pkg: Package, tag: string) {
   await $`cd ${pkg.path} && pnpm publish --tag="${tag}" --no-git-checks`;
 }
 
-export function getPublishTag(prNumber: string) {
+export function getPublishTag(prNumber: number) {
   return `pr-${prNumber}`;
 }
 
