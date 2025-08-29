@@ -79,6 +79,13 @@ export async function main() {
       pull_number: Number(prNumber),
     });
 
+    console.dir(
+      {
+        context: github.context,
+      },
+      { depth: 4 },
+    );
+
     const latestCommitSha = pullRequest.data.head.sha;
 
     core.debug(`Latest commit sha: ${latestCommitSha}`);
