@@ -61,6 +61,7 @@ export async function main() {
   try {
     const githubToken = process.env.GITHUB_TOKEN;
     const prNumber = github.context.payload.pull_request?.number;
+    const latestCommitSha = github.context.payload.pull_request?.head?.sha;
     const authToken = process.env.AUTH_TOKEN;
 
     if (!githubToken) {
@@ -71,13 +72,14 @@ export async function main() {
       throw new Error("PR number can not be determined");
     }
 
+    if (!latestCommitSha) {
+      throw new Error("Latest commit SHA can not be determined");
+    }
+
     core.debug(`PR number: ${prNumber}`);
+    core.debug(`Latest commit SHA: ${latestCommitSha}`);
 
     const octokit = github.getOctokit(githubToken);
-
-    const latestCommitSha = github.context.sha;
-
-    core.debug(`Latest commit sha: ${latestCommitSha}`);
 
     const results = await publishPackages({
       octokit,
