@@ -41,7 +41,6 @@
     - name: Preview release
       uses: variableland/gh-actions/actions/monorepo-preview-release@main
       with:
-        pr_number: ${{ github.event.pull_request.number }}
         github_token: ${{ secrets.GITHUB_TOKEN }}
         auth_token: ${{ secrets.NPM_TOKEN }} # optional
   ```
