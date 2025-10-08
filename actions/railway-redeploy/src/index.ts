@@ -15,6 +15,7 @@ type Deployment = {
   projectId: string;
   environmentId: string;
   canRedeploy?: boolean;
+  status: "SUCCESS" | "SLEEPING" | "FAILED" | string;
 };
 
 async function main() {
@@ -41,12 +42,12 @@ async function main() {
     },
   });
 
-  function getLastActiveOrSleepingDeployment() {
+  async function getLastActiveOrSleepingOrFailedDeployment() {
     const document = `#graphql
       query getLastDeployment($serviceId: String!) {
-        deployments(first: 1, input: {
+        deployments(first: 100, input: {
           serviceId: $serviceId
-          status: { in: [SUCCESS, SLEEPING] }
+          status: { in: [SUCCESS, SLEEPING, FAILED] }
         }) {
           edges {
             node {
@@ -54,13 +55,25 @@ async function main() {
               projectId
               environmentId
               canRedeploy
+              status
             }
           }
         }
       }
     `;
 
-    return gqlClient.query<Deployments>(document, { serviceId }).toPromise();
+    const result = await gqlClient.query<Deployments>(document, { serviceId }).toPromise();
+
+    if (!result.data?.deployments?.edges?.length) {
+      throw new Error("No active, sleeping, or failed deployments found");
+    }
+
+    // Find the most recent deployment with status SUCCESS, SLEEPING, or FAILED
+    const edge = result?.data?.deployments?.edges?.find(
+      ({ node: d }) => (d.status === "SUCCESS" || d.status === "SLEEPING" || d.status === "FAILED") && !!d.canRedeploy,
+    );
+
+    return edge?.node ?? null;
   }
 
   function deploymentRedeploy(deploymentId: string) {
@@ -80,16 +93,10 @@ async function main() {
   }
 
   try {
-    const result = await getLastActiveOrSleepingDeployment();
+    const deployment = await getLastActiveOrSleepingOrFailedDeployment();
 
-    if (!result.data?.deployments?.edges?.length) {
-      throw new Error("No active or sleeping deployments found");
-    }
-
-    const deployment = result.data.deployments.edges[0]!.node;
-
-    if (deployment.canRedeploy === false) {
-      throw new Error(`Deployment (ID: ${deployment.id}) cannot be redeployed`);
+    if (!deployment) {
+      throw new Error("No active, sleeping, or failed deployments found");
     }
 
     await deploymentRedeploy(deployment.id);
