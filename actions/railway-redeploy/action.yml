@@ -16,11 +16,17 @@ inputs:
     required: false
     default: "https://backboard.railway.com/graphql/v2"
 
+outputs:
+  service_url:
+    value: ${{ steps.redeploy.outputs.service_url }}
+    description: URL of the redeployed service
+
 runs:
   using: composite
 
   steps:
     - name: 🚀 Redeploy to Railway
+      id: redeploy
       run: bun ${{ github.action_path }}/src/index.ts
       shell: bash
       env:
