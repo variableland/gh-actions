@@ -7,11 +7,11 @@ inputs:
     description: ID of the Railway service to redeploy
     required: true
 
-  railway_token:
+  api_token:
     description: API token for authentication with Railway
     required: true
 
-  railway_api:
+  api_url:
     description: GraphQL API URL for Railway
     required: false
     default: "https://backboard.railway.com/graphql/v2"
@@ -30,6 +30,6 @@ runs:
       run: bun ${{ github.action_path }}/src/index.ts
       shell: bash
       env:
-        SERVICE_ID: ${{ inputs.service_id }}
-        RAILWAY_TOKEN: ${{ inputs.railway_token }}
-        RAILWAY_API: ${{ inputs.railway_api }}
+        RAILWAY_SERVICE_ID: ${{ inputs.service_id }}
+        RAILWAY_API_TOKEN: ${{ inputs.api_token }}
+        RAILWAY_API_URL: ${{ inputs.api_url }}

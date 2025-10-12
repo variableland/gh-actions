@@ -19,26 +19,26 @@ type Deployment = {
 };
 
 async function main() {
-  const serviceId = process.env.SERVICE_ID;
-  const railwayToken = process.env.RAILWAY_TOKEN;
-  const railwayApi = process.env.RAILWAY_API!;
+  const serviceId = process.env.RAILWAY_SERVICE_ID;
+  const apiToken = process.env.RAILWAY_API_TOKEN;
+  const apiUrl = process.env.RAILWAY_API_URL!;
 
   if (!serviceId) {
     core.setFailed("🚨 Railway service ID is not set");
     return;
   }
 
-  if (!railwayToken) {
+  if (!apiToken) {
     core.setFailed("🚨 Railway API token is not set");
     return;
   }
 
   const gqlClient = new Client({
-    url: railwayApi,
+    url: apiUrl,
     exchanges: [fetchExchange],
     preferGetMethod: false,
     fetchOptions: {
-      headers: { authorization: `Bearer ${railwayToken}` },
+      headers: { authorization: `Bearer ${apiToken}` },
     },
   });
 
@@ -62,21 +62,25 @@ async function main() {
       }
     `;
 
-    const result = await gqlClient.query<Deployments>(document, { serviceId }).toPromise();
+    const { data, error } = await gqlClient.query<Deployments>(document, { serviceId }).toPromise();
 
-    if (!result.data?.deployments?.edges?.length) {
+    if (error) {
+      throw new Error(`Cannot fetch deployments: ${error.message}`);
+    }
+
+    if (!data?.deployments?.edges?.length) {
       throw new Error("No active, sleeping, or failed deployments found");
     }
 
     // Find the most recent deployment with status SUCCESS, SLEEPING, or FAILED
-    const edge = result?.data?.deployments?.edges?.find(
+    const edge = data?.deployments?.edges?.find(
       ({ node: d }) => (d.status === "SUCCESS" || d.status === "SLEEPING" || d.status === "FAILED") && !!d.canRedeploy,
     );
 
     return edge?.node ?? null;
   }
 
-  function deploymentRedeploy(deploymentId: string) {
+  async function deploymentRedeploy(deploymentId: string) {
     const document = `#graphql
       mutation redeploy($deploymentId: String!) {
         deploymentRedeploy(id: $deploymentId) {
@@ -85,7 +89,11 @@ async function main() {
       }
     `;
 
-    return gqlClient.mutation(document, { deploymentId }).toPromise();
+    const { error } = await gqlClient.mutation(document, { deploymentId }).toPromise();
+
+    if (error) {
+      throw new Error(`Cannot redeploy deployment: ${error.message}`);
+    }
   }
 
   function getServicePanelUrl(deployment: Deployment) {
