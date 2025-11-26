@@ -1,10 +1,18 @@
 name: railway-redeploy
 
-description: Action to trigger a redeploy of a railway service
+description: Action to trigger a redeploy of a Railway service via GraphQL API.
 
 inputs:
-  service_id: 
-    description: ID of the Railway service to redeploy
+  project_id: 
+    description: ID of the Railway project where the service is located
+    required: true
+
+  environment:
+    description: Environment of the Railway service (e.g., production, development)
+    required: true
+
+  service_name:
+    description: Name of the Railway service to redeploy
     required: true
 
   api_token:
@@ -30,6 +38,8 @@ runs:
       run: bun ${{ github.action_path }}/src/index.ts
       shell: bash
       env:
-        RAILWAY_SERVICE_ID: ${{ inputs.service_id }}
+        RAILWAY_PROJECT_ID: ${{ inputs.project_id }}
+        RAILWAY_ENVIRONMENT: ${{ inputs.environment }}
+        RAILWAY_SERVICE_NAME: ${{ inputs.service_name }}
         RAILWAY_API_TOKEN: ${{ inputs.api_token }}
         RAILWAY_API_URL: ${{ inputs.api_url }}
