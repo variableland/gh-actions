@@ -34,6 +34,7 @@ type Environment = {
     edges: Array<{
       node: {
         id: string;
+        serviceId: string;
         serviceName: string;
       };
     }>;
@@ -136,6 +137,7 @@ async function main() {
               id
               projectId
               environmentId
+              serviceId
               canRedeploy
               status
             }
@@ -195,7 +197,7 @@ async function main() {
       throw new Error(`Service "${serviceName}" not found in environment "${environment}"`);
     }
 
-    const deployment = await getLastActiveOrSleepingOrFailedDeployment(serviceInstance.node.id);
+    const deployment = await getLastActiveOrSleepingOrFailedDeployment(serviceInstance.node.serviceId);
 
     if (!deployment) {
       throw new Error("No active, sleeping, or failed deployments found");
