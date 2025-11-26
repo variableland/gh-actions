@@ -30,12 +30,14 @@ type Environments = {
 type Environment = {
   id: string;
   name: string;
-  serviceInstances: Array<{
-    node: {
-      id: string;
-      serviceName: string;
-    };
-  }>;
+  serviceInstances: {
+    edges: Array<{
+      node: {
+        id: string;
+        serviceName: string;
+      };
+    }>;
+  };
 };
 
 const eqString = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
@@ -115,7 +117,7 @@ async function main() {
 
     const envEdge = data?.environments?.edges?.find(({ node: env }) => eqString(env.name, envName));
 
-    if (!envEdge?.node.serviceInstances.length) {
+    if (!envEdge?.node?.serviceInstances?.edges?.length) {
       throw new Error(`No services found in environment: ${envName}`);
     }
 
@@ -187,7 +189,7 @@ async function main() {
       throw new Error(`Environment "${environment}" not found`);
     }
 
-    const serviceInstance = envWithServices.serviceInstances.find((it) => eqString(it.node.serviceName, serviceName));
+    const serviceInstance = envWithServices.serviceInstances.edges.find((it) => eqString(it.node.serviceName, serviceName));
 
     if (!serviceInstance) {
       throw new Error(`Service "${serviceName}" not found in environment "${environment}"`);
