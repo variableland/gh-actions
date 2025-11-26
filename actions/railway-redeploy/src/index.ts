@@ -96,6 +96,7 @@ async function main() {
                 edges {
                   node {
                     id
+                    serviceId
                     serviceName
                   }
                 }
