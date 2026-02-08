@@ -126,11 +126,12 @@ async function main() {
     return envEdge?.node ?? null;
   }
 
-  async function getLastActiveOrSleepingOrFailedDeployment(serviceId: string) {
+  async function getLastActiveOrSleepingOrFailedDeployment(serviceId: string, environmentId: string) {
     const document = `#graphql
-      query getLastDeployment($serviceId: String!) {
+      query getLastDeployment($serviceId: String!, $environmentId: String!) {
         deployments(first: 100, input: {
           serviceId: $serviceId
+          environmentId: $environmentId
           status: { in: [SUCCESS, SLEEPING, FAILED] }
         }) {
           edges {
@@ -147,7 +148,7 @@ async function main() {
       }
     `;
 
-    const { data, error } = await gqlClient.query<Deployments>(document, { serviceId }).toPromise();
+    const { data, error } = await gqlClient.query<Deployments>(document, { serviceId, environmentId }).toPromise();
 
     if (error) {
       throw new Error(`Cannot fetch deployments: ${error.message}`);
@@ -198,7 +199,7 @@ async function main() {
       throw new Error(`Service "${serviceName}" not found in environment "${environment}"`);
     }
 
-    const deployment = await getLastActiveOrSleepingOrFailedDeployment(serviceInstance.node.serviceId);
+    const deployment = await getLastActiveOrSleepingOrFailedDeployment(serviceInstance.node.serviceId, envWithServices.id);
 
     if (!deployment) {
       throw new Error("No active, sleeping, or failed deployments found");
