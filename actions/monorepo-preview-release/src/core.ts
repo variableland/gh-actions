@@ -1,4 +1,4 @@
-import fs from "node:fs";
+import * as core from "@actions/core";
 import { $ } from "bun";
 import type { Octokit } from "./types.js";
 import { formatError, getChangedPackages, getPackagesToPublish, getWorkspacesPackages, type Package } from "./utils.js";
@@ -12,7 +12,6 @@ type Options = {
   octokit: Octokit;
   prNumber: number;
   latestCommitSha: string;
-  authToken?: string;
 };
 
 async function bumpPackage(pkg: Package, preid: string) {
@@ -28,23 +27,14 @@ export function getPublishTag(prNumber: number) {
 }
 
 export async function publishPackages(options: Options): Promise<PublishResults> {
-  const { prNumber, authToken, latestCommitSha, octokit } = options;
-
-  if (!fs.existsSync(".npmrc")) {
-    if (!authToken) {
-      throw new Error("The auth_token is required");
-    }
-
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: Don't interpolate AUTH_TOKEN for security reasons
-    fs.writeFileSync(".npmrc", "//registry.npmjs.org/:_authToken=${AUTH_TOKEN}");
-  }
+  const { prNumber, latestCommitSha, octokit } = options;
 
   const allPackages = await getWorkspacesPackages();
   const changedPackages = await getChangedPackages(octokit, allPackages);
   const packagesToPublish = await getPackagesToPublish(changedPackages, allPackages);
 
   if (!packagesToPublish.length) {
-    console.log("No packages have changed");
+    core.info("No packages have changed");
     return [];
   }
 
