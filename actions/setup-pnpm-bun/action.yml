@@ -11,6 +11,10 @@ runs:
       with:
         run_install: false
 
+    # OIDC requires npm >=11.5.1.
+    - name: Re-install npm
+      run: npm install -g npm@11
+
     - name: 🫙 Export pnpm store path
       id: pnpm-config
       shell: bash
