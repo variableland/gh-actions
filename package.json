@@ -6,8 +6,8 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@vlandoss/biome-config": "^0.0.3",
-    "@vlandoss/run-run": "^0.0.8",
+    "@vlandoss/biome-config": "^0.0.5",
+    "@vlandoss/run-run": "^0.0.13",
     "husky": "^9.1.7"
   },
   "packageManager": "pnpm@10.6.4"

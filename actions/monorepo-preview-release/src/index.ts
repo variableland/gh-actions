@@ -59,10 +59,10 @@ function getCommentBody(options: GetMessageOptions) {
 
 export async function main() {
   try {
-    const githubToken = process.env.GITHUB_TOKEN;
+    const githubToken = process.env.GITHUB_TOKEN?.trim();
+    const npmToken = process.env.NPM_TOKEN?.trim();
     const prNumber = github.context.payload.pull_request?.number;
     const latestCommitSha = github.context.payload.pull_request?.head?.sha;
-    const authToken = process.env.AUTH_TOKEN;
 
     if (!githubToken) {
       throw new Error("GITHUB_TOKEN is not set");
@@ -84,8 +84,8 @@ export async function main() {
     const results = await publishPackages({
       octokit,
       prNumber,
-      authToken,
       latestCommitSha,
+      npmToken,
     });
 
     async function getCommentId() {
