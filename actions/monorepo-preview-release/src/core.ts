@@ -1,3 +1,4 @@
+import fs from "node:fs/promises";
 import * as core from "@actions/core";
 import { $ } from "bun";
 import type { Octokit } from "./types.js";
@@ -12,14 +13,43 @@ type Options = {
   octokit: Octokit;
   prNumber: number;
   latestCommitSha: string;
+  npmToken?: string;
 };
+
+async function getNpmToken(packageName: string): Promise<string> {
+  const idToken = await core.getIDToken("npm:registry.npmjs.org");
+
+  const escaped = encodeURIComponent(packageName);
+  const url = `https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/${escaped}`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      Accept: "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`OIDC token exchange failed for ${packageName} (${res.status}): ${text}`);
+  }
+
+  const data = (await res.json()) as { token: string };
+  return data.token;
+}
 
 async function bumpPackage(pkg: Package, preid: string) {
   return (await $`cd ${pkg.path} && pnpm version prerelease --preid="${preid}" --no-git-tag-version`.text()).trim();
 }
 
 async function publishPackage(pkg: Package, tag: string) {
-  await $`cd ${pkg.path} && pnpm publish --tag="${tag}" --no-git-checks --provenance`;
+  if (!(await fs.exists(".npmrc"))) {
+    const token = await getNpmToken(pkg.name);
+    await fs.writeFile(".npmrc", `//registry.npmjs.org/:_authToken=${token}`);
+  }
+
+  await $`cd ${pkg.path} && pnpm publish --tag="${tag}" --no-git-checks`;
 }
 
 export function getPublishTag(prNumber: number) {
@@ -27,7 +57,12 @@ export function getPublishTag(prNumber: number) {
 }
 
 export async function publishPackages(options: Options): Promise<PublishResults> {
-  const { prNumber, latestCommitSha, octokit } = options;
+  const { prNumber, latestCommitSha, octokit, npmToken } = options;
+
+  if (!(await fs.exists(".npmrc")) && !!npmToken) {
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: Don't interpolate NPM_TOKEN for security reasons
+    await fs.writeFile(".npmrc", "//registry.npmjs.org/:_authToken=${NPM_TOKEN}");
+  }
 
   const allPackages = await getWorkspacesPackages();
   const changedPackages = await getChangedPackages(octokit, allPackages);

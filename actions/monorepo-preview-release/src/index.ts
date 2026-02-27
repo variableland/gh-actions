@@ -59,7 +59,8 @@ function getCommentBody(options: GetMessageOptions) {
 
 export async function main() {
   try {
-    const githubToken = process.env.GITHUB_TOKEN;
+    const githubToken = process.env.GITHUB_TOKEN?.trim();
+    const npmToken = process.env.NPM_TOKEN?.trim();
     const prNumber = github.context.payload.pull_request?.number;
     const latestCommitSha = github.context.payload.pull_request?.head?.sha;
 
@@ -84,6 +85,7 @@ export async function main() {
       octokit,
       prNumber,
       latestCommitSha,
+      npmToken,
     });
 
     async function getCommentId() {

@@ -7,6 +7,10 @@ inputs:
     description: Token for authentication with GitHub API
     required: true
 
+  npm_token:
+    description: Token for authentication with npm registry
+    required: false
+
 runs:
   using: composite
 
@@ -16,3 +20,4 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
+        NPM_TOKEN: ${{ inputs.npm_token }}
