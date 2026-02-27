@@ -59,10 +59,13 @@ function getCommentBody(options: GetMessageOptions) {
 
 export async function main() {
   try {
-    const githubToken = core.getInput("github_token", { required: true });
-
+    const githubToken = process.env.GITHUB_TOKEN;
     const prNumber = github.context.payload.pull_request?.number;
     const latestCommitSha = github.context.payload.pull_request?.head?.sha;
+
+    if (!githubToken) {
+      throw new Error("GITHUB_TOKEN is not set");
+    }
 
     if (!prNumber) {
       throw new Error("PR number can not be determined");
