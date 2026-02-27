@@ -19,7 +19,7 @@ async function bumpPackage(pkg: Package, preid: string) {
 }
 
 async function publishPackage(pkg: Package, tag: string) {
-  await $`cd ${pkg.path} && pnpm publish --tag="${tag}" --no-git-checks`;
+  await $`cd ${pkg.path} && pnpm publish --tag="${tag}" --no-git-checks --provenance`;
 }
 
 export function getPublishTag(prNumber: number) {
