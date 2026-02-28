@@ -8,8 +8,10 @@ This Github action call to Railway redeploy mutation using the official GraphQL 
 - name: 🚀 Redeploy Railway
   uses: variableland/gh-actions/actions/railway-redeploy@main
   with:
-    service_id: ${{ var.SERVICE_ID }}
-    auth_token: ${{ secrets.RAILWAY_TOKEN }}
+    project_id: ${{ vars.RAILWAY_PROJECT_ID }}
+    api_token: ${{ secrets.RAILWAY_API_TOKEN }}
+    environment: staging
+    service_name: api
 ```
 
 # Example
@@ -40,10 +42,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    env:
-      SERVICE_ID: ${{ vars.YOPPY_API_RAILWAY_STAGE_SERVICE_ID }}
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_STAGE_TOKEN }}
-
     steps:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v4
@@ -54,7 +52,8 @@ jobs:
       - name: 🚀 Redeploy Railway
         uses: variableland/gh-actions/actions/railway-redeploy@main
         with:
-          service_id: ${{ env.SERVICE_ID }}
-          railway_token: ${{ env.RAILWAY_TOKEN }}
-
+          project_id: ${{ vars.RAILWAY_PROJECT_ID }}
+          api_token: ${{ secrets.RAILWAY_API_TOKEN }}
+          environment: staging
+          service_name: api
 ```
