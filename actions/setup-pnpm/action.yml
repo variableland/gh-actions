@@ -34,3 +34,9 @@ runs:
     - name: 📥 Install dependencies
       run: pnpm install --frozen-lockfile --prefer-offline
       shell: bash # required for composite actions
+
+    - name: 🔍 Log versions
+      shell: bash
+      run: |
+        echo "pnpm version: $(pnpm -v)"
+        echo "npm version: $(npm -v)"

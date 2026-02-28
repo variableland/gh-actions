@@ -47,3 +47,10 @@ runs:
       uses: oven-sh/setup-bun@v2
       with:
         bun-version-file: ".bun-version"
+
+    - name: 🔍 Log versions
+      shell: bash
+      run: |
+        echo "pnpm version: $(pnpm -v)"
+        echo "npm version: $(npm -v)"
+        echo "bun version: $(bun -v)"
