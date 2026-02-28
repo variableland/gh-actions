@@ -43,8 +43,8 @@ async function bumpPackage(pkg: Package, preid: string) {
   return (await $`cd ${pkg.path} && pnpm version prerelease --preid="${preid}" --no-git-tag-version`.text()).trim();
 }
 
-async function publishPackage(pkg: Package, tag: string) {
-  if (!(await fs.exists(".npmrc"))) {
+async function publishPackage(pkg: Package, tag: string, useOidc: boolean) {
+  if (useOidc) {
     const token = await getNpmToken(pkg.name);
     await fs.writeFile(".npmrc", `//registry.npmjs.org/:_authToken=${token}`);
   }
@@ -59,7 +59,9 @@ export function getPublishTag(prNumber: number) {
 export async function publishPackages(options: Options): Promise<PublishResults> {
   const { prNumber, latestCommitSha, octokit, npmToken } = options;
 
-  if (!(await fs.exists(".npmrc")) && !!npmToken) {
+  const useOidc = !npmToken;
+
+  if (!useOidc && !(await fs.exists(".npmrc"))) {
     // biome-ignore lint/suspicious/noTemplateCurlyInString: Don't interpolate NPM_TOKEN for security reasons
     await fs.writeFile(".npmrc", "//registry.npmjs.org/:_authToken=${NPM_TOKEN}");
   }
@@ -92,7 +94,7 @@ export async function publishPackages(options: Options): Promise<PublishResults>
     const tag = getPublishTag(prNumber);
 
     for (const pkg of packagesToPublish) {
-      await publishPackage(pkg, tag);
+      await publishPackage(pkg, tag, useOidc);
     }
   } catch (cause) {
     const error = formatError(cause);
