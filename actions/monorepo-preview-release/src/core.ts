@@ -16,40 +16,12 @@ type Options = {
   npmToken?: string;
 };
 
-async function getNpmToken(packageName: string): Promise<string> {
-  const idToken = await core.getIDToken("npm:registry.npmjs.org");
-
-  const escaped = encodeURIComponent(packageName);
-  const url = `https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/${escaped}`;
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${idToken}`,
-      Accept: "application/json",
-    },
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`OIDC token exchange failed for ${packageName} (${res.status}): ${text}`);
-  }
-
-  const data = (await res.json()) as { token: string };
-  return data.token;
-}
-
 async function bumpPackage(pkg: Package, preid: string) {
   return (await $`cd ${pkg.path} && pnpm version prerelease --preid="${preid}" --no-git-tag-version`.text()).trim();
 }
 
 async function publishPackage(pkg: Package, tag: string, useOidc: boolean) {
-  if (useOidc) {
-    const token = await getNpmToken(pkg.name);
-    await fs.writeFile(".npmrc", `//registry.npmjs.org/:_authToken=${token}`);
-  }
-
-  await $`cd ${pkg.path} && pnpm publish --tag="${tag}" --no-git-checks`;
+  await $`cd ${pkg.path} && pnpm publish --tag="${tag}" --no-git-checks ${useOidc ? "--provenance" : ""}`;
 }
 
 export function getPublishTag(prNumber: number) {
