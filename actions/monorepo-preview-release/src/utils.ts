@@ -119,7 +119,7 @@ export async function getLastCheckpoint(octokit: Octokit) {
     const { owner, repo } = github.context.repo;
 
     const searchResponse = await octokit.rest.search.commits({
-      q: `repo:${owner}/${repo} "chore: update versions"`,
+      q: `repo:${owner}/${repo} "RELEASING:"`,
       sort: "committer-date",
       order: "desc",
       per_page: 1,
