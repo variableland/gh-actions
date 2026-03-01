@@ -31,9 +31,9 @@ export function getPublishTag(prNumber: number) {
 export async function publishPackages(options: Options): Promise<PublishResults> {
   const { prNumber, latestCommitSha, octokit, npmToken } = options;
 
-  const useOidc = !npmToken;
+  const useOidc = !npmToken && !(await fs.exists(".npmrc"));
 
-  if (!useOidc && !(await fs.exists(".npmrc"))) {
+  if (!useOidc) {
     // biome-ignore lint/suspicious/noTemplateCurlyInString: Don't interpolate NPM_TOKEN for security reasons
     await fs.writeFile(".npmrc", "//registry.npmjs.org/:_authToken=${NPM_TOKEN}");
   }
