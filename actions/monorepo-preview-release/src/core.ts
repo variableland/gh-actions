@@ -31,11 +31,15 @@ export function getPublishTag(prNumber: number) {
 export async function publishPackages(options: Options): Promise<PublishResults> {
   const { prNumber, latestCommitSha, octokit, npmToken } = options;
 
-  const useOidc = !npmToken && !(await fs.exists(".npmrc"));
+  const hasNpmRc = await fs.exists(".npmrc");
+  const hasNpmToken = !!npmToken;
+  const useOidc = !hasNpmToken && !hasNpmRc;
+  core.debug(`useOidc: ${useOidc}, hasNpmToken: ${hasNpmToken}, hasNpmRc: ${hasNpmRc}`);
 
-  if (!useOidc) {
+  if (!useOidc && !hasNpmRc) {
     // biome-ignore lint/suspicious/noTemplateCurlyInString: Don't interpolate NPM_TOKEN for security reasons
     await fs.writeFile(".npmrc", "//registry.npmjs.org/:_authToken=${NPM_TOKEN}");
+    core.debug(`Wrote .npmrc file with NPM_TOKEN template`);
   }
 
   const allPackages = await getWorkspacesPackages();
