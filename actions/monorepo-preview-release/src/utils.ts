@@ -114,8 +114,9 @@ export async function getPackagesToPublish(changedPackages: Array<Package>, allP
 async function getPrChangedFiles(octokit: Octokit, owner: string, repo: string, prNumber: number) {
   const files: Array<string> = [];
   let page = 1;
+  const MAX_PAGES = 30;
 
-  while (true) {
+  while (page <= MAX_PAGES) {
     const response = await octokit.rest.pulls.listFiles({
       owner,
       repo,
