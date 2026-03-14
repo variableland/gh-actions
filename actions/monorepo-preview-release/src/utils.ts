@@ -60,16 +60,15 @@ export async function getWorkspacesPackages(): Promise<Array<Package>> {
   return $`pnpm list -r --json`.json();
 }
 
-export async function getChangedPackages(octokit: Octokit, allPackages: Array<Package>) {
+export async function getChangedPackages(octokit: Octokit, allPackages: Array<Package>, prNumber: number) {
   function getRelativeFolderPath(absPath: string) {
     const relativePath = relative(process.cwd(), absPath);
     return relativePath.length > 0 ? relativePath : null;
   }
 
-  const lastCheckpoint = await getLastCheckpoint(octokit);
-  const changedPaths = (await $`git fetch origin main && git diff --name-only ${lastCheckpoint}`.text()).trim().split("\n");
+  const { owner, repo } = github.context.repo;
+  const changedPaths = await getPrChangedFiles(octokit, owner, repo, prNumber);
 
-  core.debug(`Last checkpoint: ${lastCheckpoint}`);
   core.debug(`Changed paths:\n${changedPaths.join("\n")}`);
 
   const changedPackagesSet = new Set<Package>();
@@ -112,25 +111,26 @@ export async function getPackagesToPublish(changedPackages: Array<Package>, allP
   return packagesToPublish;
 }
 
-export async function getLastCheckpoint(octokit: Octokit) {
-  const defaultCase = "origin/main";
+async function getPrChangedFiles(octokit: Octokit, owner: string, repo: string, prNumber: number) {
+  const files: Array<string> = [];
+  let page = 1;
 
-  try {
-    const { owner, repo } = github.context.repo;
-
-    const searchResponse = await octokit.rest.search.commits({
-      q: `repo:${owner}/${repo} "RELEASING:"`,
-      sort: "committer-date",
-      order: "desc",
-      per_page: 1,
+  while (true) {
+    const response = await octokit.rest.pulls.listFiles({
+      owner,
+      repo,
+      pull_number: prNumber,
+      per_page: 100,
+      page,
     });
 
-    const lastReleaseCommit = searchResponse?.data?.items?.[0];
+    for (const file of response.data) {
+      files.push(file.filename);
+    }
 
-    core.debug(`Last release commit: ${lastReleaseCommit?.sha ?? "not found"}`);
-
-    return lastReleaseCommit?.sha ?? defaultCase;
-  } catch {
-    return defaultCase;
+    if (response.data.length < 100) break;
+    page++;
   }
+
+  return files;
 }
