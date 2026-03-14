@@ -43,7 +43,7 @@ export async function publishPackages(options: Options): Promise<PublishResults>
   }
 
   const allPackages = await getWorkspacesPackages();
-  const changedPackages = await getChangedPackages(octokit, allPackages);
+  const changedPackages = await getChangedPackages(octokit, allPackages, prNumber);
   const packagesToPublish = await getPackagesToPublish(changedPackages, allPackages);
 
   if (!packagesToPublish.length) {
