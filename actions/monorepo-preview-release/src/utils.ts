@@ -47,7 +47,7 @@ async function getDependenciesPackages(pkg: Package, packages: Array<Package>) {
   return depPackages;
 }
 
-async function isUnpublished(pkg: Package) {
+export async function isUnpublished(pkg: Package) {
   try {
     const response = await $`pnpm view ${pkg.name} --json`.json();
     return !response.name;

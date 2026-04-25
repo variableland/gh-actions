@@ -2,7 +2,14 @@ import fs from "node:fs/promises";
 import * as core from "@actions/core";
 import { $ } from "bun";
 import type { Octokit } from "./types.js";
-import { formatError, getChangedPackages, getPackagesToPublish, getWorkspacesPackages, type Package } from "./utils.js";
+import {
+  formatError,
+  getChangedPackages,
+  getPackagesToPublish,
+  getWorkspacesPackages,
+  isUnpublished,
+  type Package,
+} from "./utils.js";
 
 export type PublishResults = Array<{
   packageName: string;
@@ -16,12 +23,41 @@ type Options = {
   npmToken?: string;
 };
 
+enum PublishMode {
+  OIDC_WITH_TOKEN_FALLBACK = "oidc-with-token-fallback",
+  OIDC_ONLY = "oidc-only",
+  TOKEN_ONLY = "token-only",
+}
+
 async function bumpPackage(pkg: Package, preid: string) {
   return (await $`cd ${pkg.path} && pnpm version prerelease --preid="${preid}" --no-git-tag-version`.text()).trim();
 }
 
-async function publishPackage(pkg: Package, tag: string, useOidc: boolean) {
-  await $`cd ${pkg.path} && pnpm publish --tag="${tag}" --no-git-checks ${useOidc ? "--provenance" : ""}`;
+async function publishPackage(pkg: Package, tag: string, mode: PublishMode) {
+  async function publish(pkg: Package, options: { tag: string; provenance?: boolean }) {
+    await $`cd ${pkg.path} && pnpm publish --tag="${options.tag}" --no-git-checks ${options.provenance ? "--provenance" : ""}`;
+  }
+
+  if (mode === PublishMode.TOKEN_ONLY) {
+    await publish(pkg, { tag });
+    return;
+  }
+
+  try {
+    await publish(pkg, { tag, provenance: true });
+  } catch (cause) {
+    if (mode === PublishMode.OIDC_ONLY) throw cause;
+
+    // Only fall back when this is genuinely a first-time publish (the chicken-and-egg
+    // case with OIDC trusted publishing). Other OIDC failures bubble up.
+    if (!(await isUnpublished(pkg))) throw cause;
+
+    core.warning(
+      `First-time publish detected for ${pkg.name}; using NPM_TOKEN auth without provenance ` +
+        `because no Trusted Publisher is configured yet.`,
+    );
+    await publish(pkg, { tag });
+  }
 }
 
 export function getPublishTag(prNumber: number) {
@@ -33,10 +69,15 @@ export async function publishPackages(options: Options): Promise<PublishResults>
 
   const hasNpmRc = await fs.exists(".npmrc");
   const hasNpmToken = !!npmToken;
-  const useOidc = !hasNpmToken && !hasNpmRc;
-  core.debug(`useOidc: ${useOidc}, hasNpmToken: ${hasNpmToken}, hasNpmRc: ${hasNpmRc}`);
 
-  if (!useOidc && !hasNpmRc) {
+  const mode: PublishMode = hasNpmRc
+    ? PublishMode.TOKEN_ONLY
+    : hasNpmToken
+      ? PublishMode.OIDC_WITH_TOKEN_FALLBACK
+      : PublishMode.OIDC_ONLY;
+  core.debug(`mode: ${mode}, hasNpmToken: ${hasNpmToken}, hasNpmRc: ${hasNpmRc}`);
+
+  if (hasNpmToken && !hasNpmRc) {
     // biome-ignore lint/suspicious/noTemplateCurlyInString: Don't interpolate NPM_TOKEN for security reasons
     await fs.writeFile(".npmrc", "//registry.npmjs.org/:_authToken=${NPM_TOKEN}");
     core.debug(`Wrote .npmrc file with NPM_TOKEN template`);
@@ -70,7 +111,7 @@ export async function publishPackages(options: Options): Promise<PublishResults>
     const tag = getPublishTag(prNumber);
 
     for (const pkg of packagesToPublish) {
-      await publishPackage(pkg, tag, useOidc);
+      await publishPackage(pkg, tag, mode);
     }
   } catch (cause) {
     const error = formatError(cause);
