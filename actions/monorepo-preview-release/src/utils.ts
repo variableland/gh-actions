@@ -57,7 +57,8 @@ export async function isUnpublished(pkg: Package) {
 }
 
 export async function getWorkspacesPackages(): Promise<Array<Package>> {
-  return $`pnpm list -r --json`.json();
+  const packages: Array<Package> = await $`pnpm list -r --json`.json();
+  return packages.filter((pkg) => !pkg.private);
 }
 
 export async function getChangedPackages(octokit: Octokit, allPackages: Array<Package>, prNumber: number) {
