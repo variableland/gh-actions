@@ -11,8 +11,8 @@ inputs:
     description: Token for authentication with npm registry
     required: false
 
-  vlandbot_url:
-    description: URL of the vlandbot server
+  vland_bot_url:
+    description: URL of the vland-bot server
     required: false
     default: "https://bot.variable.land"
 
@@ -26,4 +26,4 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         NPM_TOKEN: ${{ inputs.npm_token }}
-        VLANDBOT_URL: ${{ inputs.vlandbot_url }}
+        VLAND_BOT_URL: ${{ inputs.vland_bot_url }}

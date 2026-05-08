@@ -7,7 +7,7 @@ import { publishPackages } from "./core.js";
 try {
   const githubToken = process.env.GITHUB_TOKEN?.trim();
   const npmToken = process.env.NPM_TOKEN?.trim();
-  const vlandbotUrl = process.env.VLANDBOT_URL?.trim();
+  const vlandBotUrl = process.env.VLAND_BOT_URL?.trim();
 
   const prNumber = github.context.payload.pull_request?.number;
   const latestCommitSha = github.context.payload.pull_request?.head?.sha;
@@ -16,8 +16,8 @@ try {
     throw new Error("GITHUB_TOKEN is not set");
   }
 
-  if (!vlandbotUrl) {
-    throw new Error("VLANDBOT_URL is not set");
+  if (!vlandBotUrl) {
+    throw new Error("VLAND_BOT_URL is not set");
   }
 
   if (!prNumber) {
@@ -49,7 +49,7 @@ try {
     maxRetries: 3,
   });
 
-  const response = await http.postJson(`${vlandbotUrl}/v1/github/preview-release`, {
+  const response = await http.postJson(`${vlandBotUrl}/v1/github/preview-release`, {
     owner,
     repo,
     prNumber,
@@ -58,7 +58,7 @@ try {
   });
 
   if (response.statusCode < 200 || response.statusCode >= 300) {
-    throw new Error(`vlandbot responded with ${response.statusCode}: ${JSON.stringify(response.result)}`);
+    throw new Error(`vland-bot responded with ${response.statusCode}: ${JSON.stringify(response.result)}`);
   }
 } catch (error) {
   core.setFailed(error as unknown as Error);
