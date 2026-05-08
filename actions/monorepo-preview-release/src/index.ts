@@ -42,7 +42,7 @@ try {
 
   const { owner, repo } = github.context.repo;
 
-  const oidcToken = await core.getIDToken("vlandbot");
+  const oidcToken = await core.getIDToken("vland-bot");
 
   const http = new HttpClient("monorepo-preview-release", [new BearerCredentialHandler(oidcToken)], {
     allowRetries: true,
