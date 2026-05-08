@@ -1,129 +1,65 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import { markdownTable } from "markdown-table";
-import { getPublishTag, type PublishResults, publishPackages } from "./core.js";
+import { HttpClient } from "@actions/http-client";
+import { BearerCredentialHandler } from "@actions/http-client/lib/auth";
+import { publishPackages } from "./core.js";
 
-const COMMENT_TAG = "<!-- preview-release-action -->";
+try {
+  const githubToken = process.env.GITHUB_TOKEN?.trim();
+  const npmToken = process.env.NPM_TOKEN?.trim();
+  const vlandBotUrl = process.env.VLAND_BOT_URL?.trim();
 
-type GetMessageOptions = {
-  results: PublishResults;
-  prNumber: number;
-  latestCommitSha: string;
-};
+  const prNumber = github.context.payload.pull_request?.number;
+  const latestCommitSha = github.context.payload.pull_request?.head?.sha;
 
-function getPreviewReleaseMessage(options: GetMessageOptions) {
-  const { results, prNumber, latestCommitSha } = options;
-
-  const firstResult = results[0];
-
-  return [
-    COMMENT_TAG,
-    "### Preview release",
-    "",
-    `Latest commit: ${latestCommitSha}`,
-    "",
-    "Some packages have been released:",
-    markdownTable([
-      ["Package", "Version", "Install"],
-      ...results.map(({ packageName, nextVersion }) => [packageName, nextVersion, `\`${packageName}@${nextVersion}\``]),
-    ]),
-    "",
-    "> [!NOTE]",
-    "> Use the PR number as tag to install any package. For instance:",
-    "> ```",
-    `> pnpm add ${firstResult?.packageName}@${getPublishTag(prNumber)}`,
-    "> ```",
-  ].join("\n");
-}
-
-function getNoPreviewReleaseMessage(options: GetMessageOptions) {
-  const { latestCommitSha } = options;
-
-  return [
-    COMMENT_TAG,
-    "### Preview release",
-    "",
-    `Latest commit: ${latestCommitSha}`,
-    "",
-    "No packages have been released.",
-  ].join("\n");
-}
-
-function getCommentBody(options: GetMessageOptions) {
-  if (!options.results.length) {
-    return getNoPreviewReleaseMessage(options);
+  if (!githubToken) {
+    throw new Error("GITHUB_TOKEN is not set");
   }
 
-  return getPreviewReleaseMessage(options);
-}
-
-export async function main() {
-  try {
-    const githubToken = process.env.GITHUB_TOKEN?.trim();
-    const npmToken = process.env.NPM_TOKEN?.trim();
-    const prNumber = github.context.payload.pull_request?.number;
-    const latestCommitSha = github.context.payload.pull_request?.head?.sha;
-
-    if (!githubToken) {
-      throw new Error("GITHUB_TOKEN is not set");
-    }
-
-    if (!prNumber) {
-      throw new Error("PR number can not be determined");
-    }
-
-    if (!latestCommitSha) {
-      throw new Error("Latest commit SHA can not be determined");
-    }
-
-    core.debug(`PR number: ${prNumber}`);
-    core.debug(`Latest commit SHA: ${latestCommitSha}`);
-
-    const octokit = github.getOctokit(githubToken);
-
-    const results = await publishPackages({
-      octokit,
-      prNumber,
-      latestCommitSha,
-      npmToken,
-    });
-
-    async function getCommentId() {
-      const comment = await octokit.rest.issues.listComments({
-        repo: github.context.repo.repo,
-        owner: github.context.repo.owner,
-        issue_number: Number(prNumber),
-      });
-
-      const existingComment = comment.data.find((c) => c.body?.includes(COMMENT_TAG));
-
-      return existingComment?.id;
-    }
-
-    const commentId = await getCommentId();
-
-    const payload = {
-      repo: github.context.repo.repo,
-      owner: github.context.repo.owner,
-      issue_number: Number(prNumber),
-      body: getCommentBody({
-        results,
-        prNumber,
-        latestCommitSha,
-      }),
-    };
-
-    if (!commentId) {
-      await octokit.rest.issues.createComment(payload);
-    } else {
-      await octokit.rest.issues.updateComment({
-        ...payload,
-        comment_id: commentId,
-      });
-    }
-  } catch (error) {
-    core.setFailed(error as unknown as Error);
+  if (!vlandBotUrl) {
+    throw new Error("VLAND_BOT_URL is not set");
   }
-}
 
-main();
+  if (!prNumber) {
+    throw new Error("PR number can not be determined");
+  }
+
+  if (!latestCommitSha) {
+    throw new Error("Latest commit SHA can not be determined");
+  }
+
+  core.debug(`PR number: ${prNumber}`);
+  core.debug(`Latest commit SHA: ${latestCommitSha}`);
+
+  const octokit = github.getOctokit(githubToken);
+
+  const packages = await publishPackages({
+    octokit,
+    prNumber,
+    latestCommitSha,
+    npmToken,
+  });
+
+  const { owner, repo } = github.context.repo;
+
+  const oidcToken = await core.getIDToken("vland-bot");
+
+  const http = new HttpClient("monorepo-preview-release", [new BearerCredentialHandler(oidcToken)], {
+    allowRetries: true,
+    maxRetries: 3,
+  });
+
+  const response = await http.postJson(`${vlandBotUrl}/v1/github/preview-release`, {
+    owner,
+    repo,
+    prNumber,
+    latestCommitSha,
+    packages,
+  });
+
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw new Error(`vland-bot responded with ${response.statusCode}: ${JSON.stringify(response.result)}`);
+  }
+} catch (error) {
+  core.setFailed(error as unknown as Error);
+}
