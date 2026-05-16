@@ -1,2 +1,0 @@
-pnpm rr check --fix-staged
-git update-index --again

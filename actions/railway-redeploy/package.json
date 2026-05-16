@@ -9,10 +9,6 @@
   "engines": {
     "bun": ">=1.0.0"
   },
-  "devDependencies": {
-    "@total-typescript/tsconfig": "1.0.4",
-    "@types/bun": "^1.2.10"
-  },
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",

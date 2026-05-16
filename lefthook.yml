@@ -1,0 +1,12 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: jscheck
+      run: pnpm rr jscheck --fix-staged
+      stage_fixed: true
+
+    - name: tscheck
+      run: pnpm rr tsc
+      glob:
+        - "actions/**/*.{ts,tsx}"
+        - "actions/**/tsconfig.json"

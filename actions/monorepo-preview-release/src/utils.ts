@@ -2,7 +2,7 @@ import { relative } from "node:path";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { $ } from "bun";
-import type { Octokit } from "./types.js";
+import type { Octokit } from "./types.ts";
 
 export type Package = {
   name: string;
