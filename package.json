@@ -2,13 +2,12 @@
   "name": "gh-actions",
   "version": "0.0.0",
   "private": true,
-  "scripts": {
-    "prepare": "husky"
-  },
-  "devDependencies": {
-    "@vlandoss/biome-config": "^0.0.5",
-    "@vlandoss/run-run": "^0.0.13",
-    "husky": "^9.1.7"
+  "dependencies": {
+    "@types/bun": "^1.3.14",
+    "@types/node": "24",
+    "@vlandoss/config": "0.2.0",
+    "@vlandoss/run-run": "0.5.3",
+    "lefthook": "2.1.6"
   },
   "packageManager": "pnpm@10.6.4"
 }

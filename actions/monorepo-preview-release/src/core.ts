@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import * as core from "@actions/core";
 import { $ } from "bun";
-import type { Octokit } from "./types.js";
+import type { Octokit } from "./types.ts";
 import {
   formatError,
   getChangedPackages,
@@ -9,7 +9,7 @@ import {
   getWorkspacesPackages,
   isUnpublished,
   type Package,
-} from "./utils.js";
+} from "./utils.ts";
 
 export type PublishResults = Array<{
   packageName: string;
@@ -31,6 +31,31 @@ enum PublishMode {
 
 async function bumpPackage(pkg: Package, preid: string) {
   return (await $`cd ${pkg.path} && pnpm version prerelease --preid="${preid}" --no-git-tag-version`.text()).trim();
+}
+
+const NPM_RC_PATH = ".npmrc";
+// biome-ignore lint/suspicious/noTemplateCurlyInString: Don't interpolate NPM_TOKEN for security reasons
+const NPM_RC_AUTH_LINE = "//registry.npmjs.org/:_authToken=${NPM_TOKEN}";
+const NPM_RC_AUTH_LINE_PATTERN = /^\/\/.+:_authToken=/m;
+
+async function hasNpmRcAuthLine() {
+  try {
+    const contents = await fs.readFile(NPM_RC_PATH, "utf8");
+    return NPM_RC_AUTH_LINE_PATTERN.test(contents);
+  } catch {
+    return false;
+  }
+}
+
+async function appendNpmRcAuthLine() {
+  let existing = "";
+
+  try {
+    existing = await fs.readFile(NPM_RC_PATH, "utf8");
+  } catch {}
+
+  const separator = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
+  await fs.writeFile(NPM_RC_PATH, `${existing}${separator}${NPM_RC_AUTH_LINE}\n`);
 }
 
 async function publishPackage(pkg: Package, tag: string, mode: PublishMode) {
@@ -67,20 +92,20 @@ export function getPublishTag(prNumber: number) {
 export async function publishPackages(options: Options): Promise<PublishResults> {
   const { prNumber, latestCommitSha, octokit, npmToken } = options;
 
-  const hasNpmRc = await fs.exists(".npmrc");
+  const hasNpmRcAuth = await hasNpmRcAuthLine();
   const hasNpmToken = !!npmToken;
 
-  const mode: PublishMode = hasNpmRc
+  const mode: PublishMode = hasNpmRcAuth
     ? PublishMode.TOKEN_ONLY
     : hasNpmToken
       ? PublishMode.OIDC_WITH_TOKEN_FALLBACK
       : PublishMode.OIDC_ONLY;
-  core.debug(`mode: ${mode}, hasNpmToken: ${hasNpmToken}, hasNpmRc: ${hasNpmRc}`);
 
-  if (hasNpmToken && !hasNpmRc) {
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: Don't interpolate NPM_TOKEN for security reasons
-    await fs.writeFile(".npmrc", "//registry.npmjs.org/:_authToken=${NPM_TOKEN}");
-    core.debug(`Wrote .npmrc file with NPM_TOKEN template`);
+  core.debug(`mode: ${mode}, hasNpmToken: ${hasNpmToken}, hasNpmRcAuth: ${hasNpmRcAuth}`);
+
+  if (hasNpmToken && !hasNpmRcAuth) {
+    await appendNpmRcAuthLine();
+    core.debug(`Wrote NPM_TOKEN auth line to .npmrc`);
   }
 
   const allPackages = await getWorkspacesPackages();

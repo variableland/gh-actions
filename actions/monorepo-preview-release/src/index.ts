@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { HttpClient } from "@actions/http-client";
 import { BearerCredentialHandler } from "@actions/http-client/lib/auth";
-import { publishPackages } from "./core.js";
+import { publishPackages } from "./core.ts";
 
 try {
   const githubToken = process.env.GITHUB_TOKEN?.trim();
