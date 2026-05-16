@@ -1,4 +1,6 @@
 packages:
   - actions/*
+publicHoistPattern:
+  - "@total-typescript/*"
 onlyBuiltDependencies:
-  - '@biomejs/biome'
+  - "@biomejs/biome"
