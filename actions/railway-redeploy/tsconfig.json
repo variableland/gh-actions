@@ -1,3 +1,10 @@
 {
-  "extends": ["@vlandoss/config/ts/no-dom/app"]
+  "extends": ["@vlandoss/config/ts/no-dom/app"],
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "verbatimModuleSyntax": false,
+    "rewriteRelativeImportExtensions": true
+  },
+  "exclude": ["dist", "node_modules"]
 }

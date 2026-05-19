@@ -1,0 +1,21 @@
+[env]
+_.path = [
+  "{{config_root}}/node_modules/.bin",
+  "{{config_root}}/../../node_modules/.bin",
+]
+
+[tasks.setup]
+description = 'install deps'
+run = ['npm install']
+
+[tasks.tsc]
+run = 'rr tsc'
+
+[tasks."check"]
+run = 'rr check'
+
+[tasks.build]
+description = 'bundle src into dist/ via ncc'
+sources = ["src/**/*", "package.json", "tsconfig.json"]
+outputs = ["dist/index.js"]
+run = "ncc build src/index.ts -o dist --license licenses.txt --minify"

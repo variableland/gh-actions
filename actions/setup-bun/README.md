@@ -1,10 +1,10 @@
 # Setup Bun
 
-This Github action sets up [Bun](https://bun.sh) in your workflow.
+GitHub Action that installs [Bun](https://bun.sh) pinned to the version declared in `.bun-version`, then logs the resolved version.
 
 ## Requirements
 
-- `.bun-version` file in the root of your repository with the version of Bun you want to use
+- A `.bun-version` file at the repository root containing the Bun version to install. The action fails fast if the file is missing.
 
 ## Usage
 

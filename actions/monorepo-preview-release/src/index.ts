@@ -5,20 +5,23 @@ import { BearerCredentialHandler } from "@actions/http-client/lib/auth";
 import { publishPackages } from "./core.ts";
 
 try {
-  const githubToken = process.env.GITHUB_TOKEN?.trim();
-  const npmToken = process.env.NPM_TOKEN?.trim();
-  const vlandBotUrl = process.env.VLAND_BOT_URL?.trim();
+  // Refuse `pull_request_target`. The trigger gives the workflow access to
+  // base-branch secrets while the workflow can opt to check out the PR head;
+  // combined with lifecycle scripts in `prepack`/`prepare`, that lets a fork
+  // PR exfiltrate the publish credentials. `pull_request` is the right
+  // trigger for this action — GitHub strips secrets for fork PRs there.
+  if (github.context.eventName === "pull_request_target") {
+    throw new Error(
+      "This action refuses to run on `pull_request_target` (unsafe with PR head checkout + publish secrets). Use `on: pull_request` instead.",
+    );
+  }
+
+  const githubToken = core.getInput("github_token", { required: true });
+  const npmToken = core.getInput("npm_token") || undefined;
+  const vlandBotUrl = core.getInput("vland_bot_url") || "https://bot.variable.land";
 
   const prNumber = github.context.payload.pull_request?.number;
   const latestCommitSha = github.context.payload.pull_request?.head?.sha;
-
-  if (!githubToken) {
-    throw new Error("GITHUB_TOKEN is not set");
-  }
-
-  if (!vlandBotUrl) {
-    throw new Error("VLAND_BOT_URL is not set");
-  }
 
   if (!prNumber) {
     throw new Error("PR number can not be determined");
@@ -32,17 +35,19 @@ try {
   core.debug(`Latest commit SHA: ${latestCommitSha}`);
 
   const octokit = github.getOctokit(githubToken);
+  const { owner, repo } = github.context.repo;
 
   const packages = await publishPackages({
     octokit,
+    owner,
+    repo,
     prNumber,
     latestCommitSha,
     npmToken,
   });
 
-  const { owner, repo } = github.context.repo;
-
   const oidcToken = await core.getIDToken("vland-bot");
+  core.setSecret(oidcToken);
 
   const http = new HttpClient("monorepo-preview-release", [new BearerCredentialHandler(oidcToken)], {
     allowRetries: true,
