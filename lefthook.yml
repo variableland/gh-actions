@@ -1,12 +1,23 @@
 pre-commit:
-  parallel: true
   jobs:
-    - name: jscheck
-      run: pnpm rr jscheck --fix-staged
-      stage_fixed: true
-
-    - name: tscheck
-      run: pnpm rr tsc
+    - name: static check
+      run: mise run check
       glob:
         - "actions/**/*.{ts,tsx}"
         - "actions/**/tsconfig.json"
+
+pre-push:
+  jobs:
+    - name: verify action dist
+      run: |
+        mise run build
+        if ! git diff --exit-code 'actions/*/dist'; then
+          echo ""
+          echo "❌ One or more actions have dist/ out of sync with src/."
+          echo "   Run 'mise run build' and commit the result before pushing."
+          exit 1
+        fi
+      glob:
+        - "actions/*/src/**"
+        - "actions/*/package.json"
+        - "actions/*/tsconfig.json"

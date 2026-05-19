@@ -44,31 +44,11 @@ type Environment = {
 const eqString = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 async function main() {
-  const projectId = process.env.RAILWAY_PROJECT_ID;
-  const environment = process.env.RAILWAY_ENVIRONMENT;
-  const serviceName = process.env.RAILWAY_SERVICE_NAME;
-  const apiToken = process.env.RAILWAY_API_TOKEN;
-  const apiUrl = process.env.RAILWAY_API_URL!;
-
-  if (!projectId) {
-    core.setFailed("🚨 Railway project ID is not set");
-    return;
-  }
-
-  if (!environment) {
-    core.setFailed("🚨 Railway environment is not set");
-    return;
-  }
-
-  if (!serviceName) {
-    core.setFailed("🚨 Railway service name is not set");
-    return;
-  }
-
-  if (!apiToken) {
-    core.setFailed("🚨 Railway API token is not set");
-    return;
-  }
+  const projectId = core.getInput("project_id", { required: true });
+  const environment = core.getInput("environment", { required: true });
+  const serviceName = core.getInput("service_name", { required: true });
+  const apiToken = core.getInput("api_token", { required: true });
+  const apiUrl = core.getInput("api_url") || "https://backboard.railway.com/graphql/v2";
 
   const gqlClient = new Client({
     url: apiUrl,
@@ -158,7 +138,6 @@ async function main() {
       throw new Error("No active, sleeping, or failed deployments found");
     }
 
-    // Find the most recent deployment with status SUCCESS, SLEEPING, or FAILED
     const edge = data?.deployments?.edges?.find(
       ({ node: d }) => (d.status === "SUCCESS" || d.status === "SLEEPING" || d.status === "FAILED") && !!d.canRedeploy,
     );

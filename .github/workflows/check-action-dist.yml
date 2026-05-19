@@ -1,0 +1,41 @@
+name: Check actions dist sync
+
+on:
+  pull_request:
+    paths:
+      - "actions/*/src/**"
+      - "actions/*/package.json"
+      - "actions/*/package-lock.json"
+      - "actions/*/tsconfig.json"
+      - "actions/*/mise.toml"
+      - "mise.toml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      MISE_EXPERIMENTAL: "1"
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Setup mise
+        uses: jdx/mise-action@v2
+        with:
+          install: true
+          cache: true
+          experimental: true
+
+      - name: 📦 Install deps
+        run: mise run setup
+
+      - name: 🔨 Build all actions
+        run: mise run build
+
+      - name: 🧪 Verify dist is in sync with src
+        run: |
+          if ! git diff --exit-code 'actions/*/dist'; then
+            echo "::error::dist/ is out of sync with src/. Run 'mise run build' locally and commit the result."
+            git diff 'actions/*/dist' | head -200
+            exit 1
+          fi

@@ -1,2 +1,28 @@
+experimental_monorepo_root = true
+
+[monorepo]
+config_roots = ['actions/*']
+
 [env]
+MISE_EXPERIMENTAL = "1"
 _.path = ["{{config_root}}/node_modules/.bin"]
+
+[tools]
+node = '24'
+pnpm = '10.6.4'
+
+[tasks.setup]
+description = 'install tools + root deps + per-action deps'
+run = ['mise install', 'pnpm install', 'mise run "//actions/...:setup"']
+
+[tasks.tsc]
+description = 'typecheck across all actions'
+run = 'mise run "//actions/...:tsc"'
+
+[tasks."check"]
+description = 'static checks across all actions'
+run = 'mise run "//actions/...:check"'
+
+[tasks.build]
+description = 'build dist/ for every Node action that declares the task'
+run = 'mise run "//actions/...:build"'
