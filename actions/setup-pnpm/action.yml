@@ -13,7 +13,12 @@ runs:
 
     - name: 📦 Update npm
       shell: bash
-      run: sudo npm install -g npm@11
+      run: |
+        if command -v sudo >/dev/null 2>&1; then
+          sudo npm install -g npm@11
+        else
+          npm install -g npm@11
+        fi
 
     - name: 🫙 Export pnpm store path
       id: pnpm-config
