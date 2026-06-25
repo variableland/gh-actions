@@ -20,6 +20,8 @@ try {
   const npmToken = core.getInput("npm_token") || undefined;
   const vlandBotUrl = core.getInput("vland_bot_url") || "https://bot.variable.land";
 
+  if (npmToken) core.setSecret(npmToken);
+
   const prNumber = github.context.payload.pull_request?.number;
   const latestCommitSha = github.context.payload.pull_request?.head?.sha;
 
