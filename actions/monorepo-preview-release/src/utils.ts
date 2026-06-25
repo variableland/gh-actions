@@ -25,6 +25,25 @@ export function formatError(cause: unknown): Error {
   return cause instanceof Error ? cause : new Error("Unknown error");
 }
 
+export async function runLogged(
+  cmd: string,
+  args: string[],
+  opts: { cwd?: string; group: string },
+): Promise<{ exitCode: number; output: string }> {
+  const proc = x(cmd, args, { nodeOptions: opts.cwd ? { cwd: opts.cwd } : {} });
+  core.startGroup(opts.group);
+  let output = "";
+  try {
+    for await (const line of proc) {
+      output += `${line}\n`;
+      core.info(line);
+    }
+  } finally {
+    core.endGroup();
+  }
+  return { exitCode: proc.exitCode ?? 1, output };
+}
+
 // pnpm list -r --json --depth 0
 export async function getWorkspacesPackages(cwd: string = process.cwd()): Promise<WorkspacePackage[]> {
   const result = await x("pnpm", ["list", "-r", "--json", "--depth", "0"], { nodeOptions: { cwd } });
