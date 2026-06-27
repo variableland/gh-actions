@@ -6,6 +6,7 @@ Reusable GitHub Actions used across Variable Land projects.
 
 | Action | Description |
 | --- | --- |
+| [`preview-release`](./actions/preview-release/README.md) | Publish a per-PR preview release of a standalone library (single package, not a workspace) to npm (OIDC-first, with optional `NPM_TOKEN` fallback) and notify [`vland-bot`](https://bot.variable.land) so it can comment on the PR. |
 | [`monorepo-preview-release`](./actions/monorepo-preview-release/README.md) | Publish a per-PR preview release of changed packages in a pnpm monorepo to npm (OIDC-first, with optional `NPM_TOKEN` fallback) and notify [`vland-bot`](https://bot.variable.land) so it can comment on the PR. |
 | [`railway-redeploy`](./actions/railway-redeploy/README.md) | Trigger a redeploy of a Railway service via the Railway GraphQL API. Resolves the target service from `project_id` + `environment` + `service_name`, so no service ID lookup is needed. |
 | [`setup-pnpm`](./actions/setup-pnpm/README.md) | Install pnpm, upgrade npm, cache the pnpm store, and install dependencies. |
