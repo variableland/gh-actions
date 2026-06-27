@@ -2,12 +2,12 @@ import { existsSync } from "node:fs";
 import { readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import * as core from "@actions/core";
-import { x } from "tinyexec";
-import { formatError, getPackage, isPublishable, isUnpublished, type Package } from "./utils.ts";
+import { formatError, getPackage, isPublishable, isUnpublished, type Package, runLogged } from "./utils.ts";
 
 export type PublishResults = Array<{
   packageName: string;
   nextVersion: string;
+  firstTime: boolean;
 }>;
 
 type Options = {
@@ -25,11 +25,12 @@ const PublishMode = {
 type PublishMode = (typeof PublishMode)[keyof typeof PublishMode];
 
 async function bumpPackage(pkg: Package, preid: string): Promise<string> {
-  const result = await x("pnpm", ["version", "prerelease", "--preid", preid, "--no-git-tag-version"], {
-    nodeOptions: { cwd: pkg.path },
+  const result = await runLogged("pnpm", ["version", "prerelease", "--preid", preid, "--no-git-tag-version"], {
+    cwd: pkg.path,
+    group: `pnpm version: ${pkg.name}`,
   });
   if (result.exitCode !== 0) {
-    throw new Error(`pnpm version failed for ${pkg.name} (exit ${result.exitCode}): ${result.stderr || result.stdout}`);
+    throw new Error(`pnpm version failed for ${pkg.name} (exit ${result.exitCode}): ${result.output}`);
   }
   const manifest = JSON.parse(await readFile(path.join(pkg.path, "package.json"), "utf8")) as { version: string };
   return manifest.version;
@@ -42,9 +43,10 @@ async function publishOnce(
 ): Promise<{ ok: true } | { ok: false; stderr: string }> {
   const args = ["publish", "--tag", tag, "--access", "public", "--no-git-checks"];
   if (opts.provenance) args.push("--provenance");
-  const result = await x("pnpm", args, { nodeOptions: { cwd: pkg.path } });
+  const label = opts.provenance ? `${pkg.name} (provenance)` : pkg.name;
+  const result = await runLogged("pnpm", args, { cwd: pkg.path, group: `pnpm publish: ${label}` });
   if (result.exitCode === 0) return { ok: true };
-  return { ok: false, stderr: result.stderr || result.stdout };
+  return { ok: false, stderr: result.output };
 }
 
 async function publishPackage(pkg: Package, tag: string, mode: PublishMode): Promise<void> {
@@ -69,6 +71,20 @@ async function publishPackage(pkg: Package, tag: string, mode: PublishMode): Pro
   );
   const r2 = await publishOnce(pkg, tag, { provenance: false });
   if (!r2.ok) throw new Error(`Failed to publish ${pkg.name} (fallback): ${r2.stderr}`);
+}
+
+async function demoteAutoLatest(pkg: Package, tag: string): Promise<void> {
+  const result = await runLogged("pnpm", ["dist-tag", "rm", pkg.name, "latest"], {
+    group: `pnpm dist-tag rm latest: ${pkg.name}`,
+  });
+  if (result.exitCode === 0) {
+    core.info(`Removed npm's auto-assigned "latest" from first-time package ${pkg.name}; only the "${tag}" tag remains.`);
+    return;
+  }
+  core.warning(
+    `${pkg.name}: npm set "latest" to the preview version on first publish and removing it failed ` +
+      `(${result.output.trim()}). "latest" now points to a PR build until a stable release re-points it.`,
+  );
 }
 
 function detectMode(workspaceDir: string, hasNpmToken: boolean): PublishMode {
@@ -123,6 +139,8 @@ export async function release(options: Options): Promise<PublishResults> {
       return [];
     }
 
+    const firstTime = await isUnpublished(pkg.name);
+
     let nextVersion: string;
     try {
       const preid = `git-${latestCommitSha.substring(0, 7)}`;
@@ -131,13 +149,16 @@ export async function release(options: Options): Promise<PublishResults> {
       throw new Error(`Failed to bump package: ${formatError(cause).message}`);
     }
 
+    const tag = getPublishTag(prNumber);
+
     try {
-      const tag = getPublishTag(prNumber);
       await publishPackage(pkg, tag, mode);
     } catch (cause) {
       throw new Error(`Failed to publish package: ${formatError(cause).message}`);
     }
 
-    return [{ packageName: pkg.name, nextVersion }];
+    if (firstTime) await demoteAutoLatest(pkg, tag);
+
+    return [{ packageName: pkg.name, nextVersion, firstTime }];
   });
 }
