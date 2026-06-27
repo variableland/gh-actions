@@ -86,20 +86,6 @@ async function publishPackage(pkg: WorkspacePackage, tag: string, mode: PublishM
   if (!r2.ok) throw new Error(`Failed to publish ${pkg.name} (fallback): ${r2.stderr}`);
 }
 
-async function demoteAutoLatest(pkg: WorkspacePackage, tag: string): Promise<void> {
-  const result = await runLogged("pnpm", ["dist-tag", "rm", pkg.name, "latest"], {
-    group: `pnpm dist-tag rm latest: ${pkg.name}`,
-  });
-  if (result.exitCode === 0) {
-    core.info(`Removed npm's auto-assigned "latest" from first-time package ${pkg.name}; only the "${tag}" tag remains.`);
-    return;
-  }
-  core.warning(
-    `${pkg.name}: npm set "latest" to the preview version on first publish and removing it failed ` +
-      `(${result.output.trim()}). "latest" now points to a PR build until a stable release re-points it.`,
-  );
-}
-
 function detectMode(workspaceDir: string, hasNpmToken: boolean): PublishMode {
   const npmrcPath = path.join(workspaceDir, ".npmrc");
   if (existsSync(npmrcPath)) return PublishMode.TOKEN_ONLY;
@@ -180,10 +166,6 @@ export async function publishPackages(options: Options): Promise<PublishResults>
       }
     } catch (cause) {
       throw new Error(`Failed to publish packages: ${formatError(cause).message}`);
-    }
-
-    for (const pkg of packagesToPublish) {
-      if (firstTime.has(pkg.name)) await demoteAutoLatest(pkg, tag);
     }
 
     return Array.from(nextVersions.entries()).map(([packageName, nextVersion]) => ({

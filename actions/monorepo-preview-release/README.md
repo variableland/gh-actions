@@ -8,7 +8,7 @@ For each PR:
 - Each package gets its version bumped to `<current>-git-<short-sha>` (prerelease).
 - Each package is published to npm under the dist-tag `pr-<pr-number>`.
 - Private packages (`"private": true`) are excluded.
-- For a package's **first ever publish**, npm force-assigns the `latest` dist-tag to that version even with a custom `--tag`. The action detects these first-time publishes and removes the auto-assigned `latest` afterwards (best-effort), so a preview build never becomes the default `pnpm add <pkg>` target. See [First-time publishes & `latest`](#first-time-publishes--latest).
+- A package's **first ever publish** is a special case: npm force-assigns the `latest` dist-tag to it (and won't let that tag be removed), so the preview becomes the default `pnpm add <pkg>` target until a stable release re-points `latest`. The action flags these first-time publishes to `vland-bot` so the PR comment can warn about it. See [First-time publishes & `latest`](#first-time-publishes--latest).
 - Once publishing finishes, the action calls the `vland-bot` server (authenticated with a GitHub OIDC token scoped to the `vland-bot` audience) so it can comment on the PR.
 
 ## Usage
@@ -61,19 +61,20 @@ The action POSTs the published packages to `vland-bot` (`POST <vland_bot_url>/v1
 | --- | --- | --- |
 | `packageName` | `string` | The npm package name. |
 | `nextVersion` | `string` | The published preview version (`<current>-git-<short-sha>`). |
-| `firstTime` | `boolean` | `true` when this run published the package's very first version. `vland-bot` can use it to flag the preview in the comment (its `latest` tag was just removed, so the package is only installable via `@pr-<n>` or the exact version until a stable release). |
+| `firstTime` | `boolean` | `true` when this run published the package's very first version. npm makes that version `latest` (unavoidably — see below), so `vland-bot` can use this flag to warn in the comment that `pnpm add <pkg>` currently resolves to a preview build until a stable release re-points `latest`. |
 
 ## First-time publishes & `latest`
 
-npm requires every package to have a `latest` dist-tag, so the **first** version ever published becomes `latest` — even when `pnpm publish --tag pr-<n>` is used. Without intervention, a brand-new package's preview build would silently become the default that `pnpm add <pkg>` (no tag) resolves to.
+npm requires every package to always have a `latest` dist-tag, so the **first** version ever published becomes `latest` — even when `pnpm publish --tag pr-<n>` is used. There is no way around this: npm rejects any attempt to delete the `latest` tag (`npm dist-tag rm <pkg> latest` returns `400 Bad Request`), and a package cannot exist without one.
 
-After publishing, the action removes that auto-assigned `latest` for first-time packages (`pnpm dist-tag rm <pkg> latest`). The result:
+So for a brand-new package, the first PR preview unavoidably becomes the version that `pnpm add <pkg>` (no tag) resolves to, until a stable release re-points `latest`.
 
-- Only the `pr-<n>` tag remains, so `pnpm add <pkg>@pr-<n>` and installs by exact version keep working.
-- `pnpm add <pkg>` (no tag) **fails loudly** instead of silently installing a PR build.
-- The first real release (via the normal release pipeline) re-establishes a proper stable `latest`.
+The action does not try to fix this at the registry (it can't). Instead it detects first-time publishes and reports `firstTime: true` to `vland-bot`, which can warn in the PR comment. Each published preview stays installable by tag or exact version:
 
-This step is best-effort: if the registry refuses the removal, the action logs a warning rather than failing the run, and the package is still reported to `vland-bot` with `firstTime: true`.
+- `pnpm add <pkg>@pr-<n>` — by PR tag.
+- `pnpm add <pkg>@<version>` — by exact `<current>-git-<short-sha>` version.
+
+The fix is to cut a real release: the normal release pipeline publishes a stable version and re-points `latest` to it.
 
 ## How publishing works
 
@@ -82,11 +83,10 @@ The action shells out to the real `pnpm` CLI for the heavy lifting:
 - `pnpm list -r --json --depth 0` to enumerate the workspace.
 - `pnpm version prerelease --preid git-<sha> --no-git-tag-version` to bump.
 - `pnpm publish --tag pr-<n> --no-git-checks [--provenance]` to publish.
-- `pnpm dist-tag rm <pkg> latest` to undo the auto-assigned `latest` on first-time publishes.
 
 `pnpm publish` takes care of `workspace:*` and `catalog:` resolution, `publishConfig` overrides, lifecycle scripts (`prepublishOnly`, `prepack`, `prepare`), and the npm Trusted Publisher OIDC exchange. This action just orchestrates which packages get bumped and the auth-mode selection.
 
-The mutating commands (`pnpm version`, `pnpm publish`, `pnpm dist-tag`) stream their combined output to the Actions log inside collapsible groups, so a run's progress is visible. The JSON query commands (`pnpm list`, `pnpm view`) stay silent — their output is parsed, not displayed.
+The mutating commands (`pnpm version`, `pnpm publish`) stream their combined output to the Actions log inside collapsible groups, so a run's progress is visible. The JSON query commands (`pnpm list`, `pnpm view`) stay silent — their output is parsed, not displayed.
 
 ## Requirements on the calling workflow
 
